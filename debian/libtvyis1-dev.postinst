@@ -1,0 +1,9 @@
+#!/bin/sh
+
+if [ "$1" = "configure" ]; then
+ if [ -d /usr/doc -a ! -e /usr/doc/libtyvis1-dev -a -d /usr/share/doc/libtyvis1-dev ]; then
+  ln -sf ../share/doc/libtyvis1-dev /usr/doc/libtyvis1-dev
+ fi
+fi
+
+#DEBHELPER#

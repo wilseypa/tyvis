@@ -1,0 +1,205 @@
+#!/local/packages/gnu/bin/perl -d  -w
+
+#Perl Translation from VHDL to flattened VHDL for Savant 
+#Vijay Balakrishnan
+#usage flatvhdl <inputvhdlfile> <outputfile> 
+#This file needs gates.vhdl and standard.pkg to be in the current directory
+#The file gates.vhdl has been modified by adding lables for all architectures
+
+ 
+@gatenames =  (    "ANDG_4", "ANDG_5",  "ANDG_8",  "ANDG_9","ANDG ",  "BUFFG",  
+	     "INVG", "NANDG_3", "NANDG_4",  "NANDG_5", "NANDG_8","NANDG " ,  
+	     "NORG " ,  "NORG_3",  "NORG_4",  "NORG_8",  "ORG ",   "ORG_3",  
+	     "ORG_4",   "ORG_5",  "XNORG",   "XORG"
+  );
+
+$infile  = $ARGV[0] ;
+$outfilename = $ARGV[1];
+
+
+
+$gatesfile = "gates.vhdl" ;
+
+
+open (OUT , ">>$outfilename" )  || die " Cannot Create Out File " ; 
+
+$flag = 0 ;
+$pattern =  " => ";
+$pattern2 = "\)\)\;" ; 
+$pattern3 = ":" ;
+$count = 0 ; 
+
+foreach $keys ( @gatenames){
+    print $keys  ,"\n" ;
+}
+foreach $keys (@gatenames){
+    $search = $keys ;    
+    print " searching " ,$search , "\n "; 
+    open (MAIN , $infile) || die "File Creation Error " ;
+    $flag5 = 0 ;
+    $flag = 0 ;
+    while (<MAIN>){
+	$flag6 = 0 ;
+	
+	$flag = 1 if m/$search/ ;
+	if ($flag eq 1 ) { 
+	
+	    ($gateid , $generic  ) = split (/:/);
+	    #print " 1st" , $gateid , $generic, "\n" ;
+	    ($generic , $rest ) = split (/generic /,$generic );
+	    #print $gateid , $generic  , "\n" ;
+	    $gatedes = $gateid.$pattern3.$generic ;
+	    #print $gatedes ;
+	    $table1{$.} = $gatedes ;
+	}
+	 
+	if (m/\(/g) { $count = $count + 1 };
+	if (m/\)/g) {$count = $count - 1  }; 
+
+	if ($flag == 1) {$flag5 = 1 }
+	$flag6 = 1 if m/$pattern/ ;
+	print  $flag6 ," " , $flag5 , " gth \n" ;
+	if (( $flag6 eq 1 )  && ($flag5 ==  1)){
+	    $flag5 = 0 if m/\);/ ;  
+	   # if (m/\(/g) { $count = $count + 1 };
+	   # if (m/\)/g) {$count = $count - 1  }; 
+	    s/\);//g;
+	    s/;//g;
+	    s/,//g;
+	    ($actual , $signal ) = split(/$pattern/);
+	    print "Get printed  " ,$gateid , $actual , $signal ,"\n" ;
+	    $actual = $gateid.$pattern3.$actual ;
+	    $table2{$actual} = $signal  ;
+	    #print "$actual\t$table2{$actual}\n" ;
+	    
+	}
+	elsif ($count == 0) {
+	    #$flag5 = 0 ;    
+	    print "-----------\n" ;
+	   }
+
+	$flag4 = 0 ;
+	$flag = 0 ;
+    }				# 
+    $flag4 = 0 ;		# 
+    
+}
+# subroutine to sort by numbers  ###############
+
+sub bynumber { 
+    if ($a < $b){ -1; }
+    elsif ($a == $b) { 0; }
+    elsif ($a > $b){ 1; }
+};
+# end of subroutine ####################
+
+# debug the tables #####################
+open (DEBUG , ">debug") || die " File not created " ;
+print DEBUG  " TABLE1  \n" ;
+foreach $keys ( sort bynumber keys(%table1) ){
+    print DEBUG $keys ,  $table1{$keys},  "\n"  ;
+}
+
+print DEBUG "TABLE2 \n" ;
+foreach $keys ( sort keys (%table2) ){
+ print DEBUG $keys , $table2{$keys}, "\n"  ;
+}
+#######################################
+
+#start building output ##############################################
+ 
+open (STDPKG , "standard.pkg" ) || die "File standard.pkg not found " ;
+while (<STDPKG>){
+    print OUT $_ ;
+}
+
+print " architecture demo of what ? " ;
+chop( $inputname = <STDIN>);
+($inputCAPS = $inputname ) =~ tr/a-z/A-Z/ ;
+print OUT "entity ", $inputCAPS ," is \n" ;
+print OUT "	 generic (tpd_hl : time := 1 fs;\n";
+print OUT "	          tpd_lh : time := 1 fs);\n";
+print OUT "end;\n\n";
+		# 
+print OUT "architecture DEMO of ",$inputCAPS ," is\n\n" ;
+$flag2 = 0 ;
+$flag3 = 0 ;
+open (MAIN , $infile) || die "File Creation Error " ;
+while (<MAIN>){
+    $flag2 = 1 if m/ENTITY/;
+    $flag3 = 1 if m/END/ ;
+
+    if ($flag2 eq 1 && $flag3 eq 0 ){
+	
+	s/PORT *\(//g;
+	if(m/bit/){    
+	    ($sig , $therest)=split(/:/);
+	    $sig =~ s/ //g;
+	    $therest =~ s/ in //g;
+	    $therest =~ s/ out //g;
+	    print OUT "  signal  " ,$sig ," : " , $therest ;
+	}
+   } 
+}	
+
+print OUT "\n" ; 
+open (MAIN , $infile) || die "File Creation Error " ;
+while (<MAIN>){
+    if (m/signal/){
+      	print OUT $_ ;
+    }
+}
+print OUT "\nBEGIN\n\n" ;
+	
+$flag2 = 0 ;
+
+foreach $keys ( sort bynumber keys(%table1) ){
+    $gatedes = $table1{$keys};
+    ($gateid , $gatCAPS ) = split(/:/ ,$gatedes);
+    ($lowercase =  $gatCAPS ) =~ tr/A-Z/a-z/ ;
+    chop($lowercase) ;
+    print  $gateid ," " ,$lowercase ,"\n" ;
+    $i = 0 ; 
+    open (GATES , $gatesfile ) || die "File Creation Error " ;
+    while(<GATES>){ 
+	
+	$flag2 = 1 if m/architecture only of$lowercase is/ ;
+	#print " oh yeah got you " , $lowercase , " " , $flag1 , "\n" ;
+	$flag2 = 0 if m/end only;/ ; 
+	
+	if ($flag2 eq 1){ 
+	    $i = $i + 1 ; 
+	    if ( $i > 2 ){
+		s/p1/$gateid/g;
+		
+		foreach $actual(sort keys (%table2)){ 
+		    ($gatename , $signal) = split(/:/ ,$actual,2);
+		    $formal = $table2{$actual};
+		    chop($formal) ;
+		    $signal =~ s/ //g ;
+		    if ($gateid eq $gatename ){	 
+			#print "hi " ,$gatename , "l ",  $signal ," l " , $formal , "\n" ; # 
+			s/$signal/$formal/g ; # 
+		    }			# 
+		    else { #print "NO MAtch \n" ;
+		    }
+		}			# 
+		
+		print OUT  $_ ;		# 
+	    }				# 
+	}    
+    }
+    
+    
+}	
+open (MAIN , $infile) || die "File Creation Error " ;
+  
+while(<MAIN>) {
+    if (m/BUFFER_OUT/){
+	print OUT $_ ;
+	print "\n\n" ;
+    }
+}				#		# 
+print  OUT "End DEMO; " ;
+
+

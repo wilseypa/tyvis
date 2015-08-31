@@ -1,0 +1,10 @@
+tyvis for Debian
+----------------
+Tyvis has undergone major changes since the last release.  It is now
+linked against a completely rewritten warped, which exists in the Debian
+packages libwarped0 and libwarped0-dev.  See the README.Debian in the
+Savant package for more info about how to simulate VHDL using
+Savant/Tyvis/Warped.  API documentation for TyVis is at
+<http://www.cliftonlabs.com/savant/docs/tyvis/html/>.
+
+Dale E. Martin <dmartin@cliftonlabs.com>, Thu Jan  1 15:50:42 EST 2004

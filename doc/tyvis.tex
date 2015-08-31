@@ -1,0 +1,1659 @@
+\documentclass[11pt]{article}
+
+\usepackage{alltt,color,fullpage,psfig,url}
+
+\newcommand{\version}{1.02}
+
+\begin{document}
+
+\title{
+\textbf{TyVIS}\\
+A VHDL Simulation Kernel\\
+(Documentation for version \version)}
+
+\author{
+\emph{Krishnan Subramani}, \emph{Malolan Chetlur}, \emph{Timothy
+J. McBrayer},\\ \emph{Radharamanan Radhakrishnan}, \emph{Dale E. Martin}
+and \emph{Philip A.  Wilsey} \\
+Computer Architecture Design Laboratory \\
+Dept of ECECS, PO Box 210030 \\
+Cincinnati, OH  45221--0030 \\
+\textit{savant@cliftonlabs.com}
+}
+
+\date{}
+
+\maketitle
+
+\vspace*{1.5in}
+
+\begin{center}
+\noindent
+\textbf{Copyright \copyright 1995-2003 The University of Cincinnati.  All
+rights reserved.}  
+
+\bigskip
+\noindent
+Published by the University of Cincinnati \\
+Dept of ECECS, PO Box 210030 \\
+Cincinnati, OH  45221--0030 USA 
+\end{center}
+
+\bigskip
+
+\noindent
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+\medskip
+\noindent
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+\medskip
+\noindent
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions.
+
+\newpage
+\setcounter{page}{1}
+
+\tableofcontents
+\newpage
+
+\section*{Preface}
+This file documents the programming interface for version \version\/ of
+TyVIS, a VHDL simulation kernel that resides on top of the {\sc warped}
+discrete event simulation kernel.  Online, html documentation for the
+TyVIS project is located at {\it http://www.ece.uc.edu/$\sim$paw/TyVIS} and
+for the {\sc warped} project is located at
+{\it http://www.ece.uc.edu/$\sim$paw/warped}.  The TyVIS and {\sc warped}
+projects are part of an effort of parallel CAD tool development (QUEST
+II, documented at {\it http://www.ece.uc.edu/$\sim$hcarter/questII.html}).
+This work was partially supported by the Advanced Research Projects
+Agency, monitored by the Department of Justice under contract number
+J--FBI--93--116.
+
+\newpage
+
+%% some definitions to speed things up
+\newcommand{\Cpp}{C$^{_{++}}$}
+\newcommand{\ie}{\emph{i.e.,}\xspace}
+\newcommand{\etal}{\mbox{\emph{et al}\xspace}}
+\newcommand{\eg}{\mbox{\emph{e.g.,}\xspace}}
+\newcommand{\cross}{\ensuremath{\times}}
+
+\newcommand{\warped}{{\sc warped}}
+\newcommand{\tyvis}{TyVIS}
+\newcommand{\LrmRef}[1]{(See \mbox{\S~#1})}
+\newcommand{\LRM}{\textit{VHDL LRM 1076-1993}~\cite{vhdl-lrm-93}}
+\newcommand{\A}{\ensuremath{\mathcal{A}}}
+\newcommand{\B}{\ensuremath{\mathcal{B}}}
+\newcommand{\T}{\ensuremath{\mathcal{T}}}
+\renewcommand{\O}{\ensuremath{\mathcal{O}}}
+
+\newlength{\figurewidth}
+\setlength{\figurewidth}{\textwidth}
+
+%
+% Creates a properly formatted example with a box, label, and a caption in
+% it.  Arguments, in order are,
+% label, caption, body
+% 
+
+\newcommand{\example}[3]{
+  \begin{center}
+%    \begin{singlespace}
+      \begin{figure}[htbp]
+        \framebox[\figurewidth]{
+          \begin{minipage}{\figurewidth}
+            \begin{alltt}
+              \begin{tabbing}
+                1234\=1234\=1234\=1234\=1234\=1234\=\kill
+                #3
+              \end{tabbing}
+            \end{alltt}
+          \end{minipage}
+          }
+        \caption{#2}
+        \label{#1}
+      \end{figure}
+%    \end{singlespace}
+  \end{center}
+  }
+
+
+%%@include intro.texi
+\section{Introduction}
+
+TyVIS is a VHDL simulation kernel which has been implemented on top of
+the {\sc warped} Time Warp simulation kernel.  This combination
+provides parallel VHDL capability.  While TyVIS is primarily intended to
+execute under {\sc warped}, it is not restricted to it.  It is the
+designer's intent to have TyVIS be completely ignorant of the underlying
+simulation engine, as long as the engine provides TyVIS with the correct
+procedural interface.  TyVIS allows you to simulate and execute VHDL
+code that has been translated into the TyVIS \Cpp\/ intermediate form.  The
+VHDL simulator provides the functionality required by a VHDL simulation
+kernel as specified by the VHDL LRM. 
+
+It is possible to take any VHDL design and convert it to the
+corresponding \Cpp\/ code capable of executing on the simulator quite
+easily.  Since the system has been written in a object oriented manner
+additional classes can be defined to account for any unimplemented
+functionality.  Fundamentally, each VHDL process is represented by two
+\Cpp\/ classes whose contents encompass: 
+
+\begin{itemize}
+\item the initial VHDL process state
+\item the process's \Cpp\/ class definition 
+\end{itemize}
+        
+The system allows you to define any wait classes used by a process or,
+as well as any additional functions like type conversions functions or
+bus resolutions functions. 
+
+\section{Requirements}
+
+The TyVIS system will compile under g++ version 2.95.x and version g++ 3.2,
+but has not been tested on older versions.  Successes on older versions
+would be of interest to us.  You will need an STL implementation with any
+compiler that you utilize.
+
+When running in parallel, {\sc warped} (and thus TyVIS) objects communicate
+by passing messages using the MPI message passing standard.  (The {\sc
+mpich} implementation of the MPI standard, version 1.1.0 is used.
+Information on {\sc mpich} is available from {\it
+http://www.mcs.anl.gov/mpi/}).  It is possible to develop applications with
+TyVIS without having MPI installed on your system, but in order to use
+TyVIS in parallel, MPI must be installed.  It is also worth noting that the
+functions used from MPI are very simple point to point communication, and
+that most message passing libraries would have similar functions.  Thus,
+porting TyVIS to a different message passing library should be a relatively
+simple endeavor.
+
+%%types.tex
+\section{Type structure in TyVIS}
+\label{chp:design_types}
+
+Types form the basis of the design of any language.  Almost every
+other design decision is affected by the way the types are organized
+and handled.  Unlike a sequential programming language, the design of
+the type structure in TyVIS needs special attention.  Some of these
+restrictions are imposed by the specifications of VHDL, some due to
+the requirements of \warped, and a few more due to the limitations of
+\Cpp\/.  Listed below are a notable few:
+
+\begin{itemize}
+  \setlength{\itemsep}{-5pt}
+\item VHDL is a strongly typed language.
+\item All the types have to be represented \textit{uniformly} in \Cpp.
+\item Elaboration of the type declarations may take place at run time.
+\item Unconstrained array types and type attributes are allowed.
+\item Objects and non-objects, such as types, may be aliased.
+\item Subtypes can constraint the base type without creating a new type.
+\item Constraints are imposed by \warped\/ because of the distributed
+  simulation paradigm and Time Warp overheads like state-saving,
+  rollback, etc.
+\end{itemize}
+
+This section will explain how each of the above mentioned constraints
+are accommodated, while maintaining a uniform interface.  The object
+oriented design allows the \Cpp\/ type structure to have the same
+hierarchy as that of VHDL, as shown in Figure~\ref{fig:c++_types}.  A
+notable difference between the instantiation of types in \Cpp\/ and VHDL
+is the use of \textit{objects}.  The properties of these objects also
+influence the design of the types.
+
+\subsection{Difference between types and objects}
+
+In \Cpp\/ only variables and constants can be used to store a value,
+but in VHDL, a \textit{variable}, \textit{constant}, \textit{signal},
+or a \textit{file} can be used.  The only difference between a value
+contained by a variable and a constant is that the former can be
+modified, whereas the latter can not be.  Signals and files behave
+differently from both variables and constants. The properties of files
+and signals are explained in greater detail in Section~\ref{sec:files}
+and Section~\ref{sec:signals}.
+
+Any one of the three kinds of objects, can be paired with a
+type\footnote{with certain exceptions} to instantiate an object. An
+object is basically a container for the values of a type.  A detailed
+discussion about objects follows in Section~\ref{chp:design_objects}.
+The organization of the types in TyVIS is explained in the following
+sections in an attempt to answer the questions posed above.
+
+\subsection{Type classification in TyVIS}
+
+\begin{figure}[htbp]
+   \centerline{\psfig{figure=figures/VHDLTypes.ps,width=5in,silent=}}
+  \caption{Type structure in VHDL}
+  \label{fig:VHDLTypes}
+\end{figure}
+
+A VHDL type is represented as a \Cpp\/ class in TyVIS.  The
+inheritance and the methods provided in this type define its
+properties.  \LRM\/ suggests a type classification (shown in
+Figure~\ref{fig:VHDLTypes}) which is adopted in TyVIS as illustrated
+in Figure~\ref{fig:c++_types}.  The relationships between the types is
+established through appropriate inheritances.  All the types in the
+system, including the ones predefined by the language, are derived
+from one of the leaf nodes of this tree.  Every type declaration in
+the VHDL design maps on to a \textit{class} declaration in TyVIS.  The
+type specific information such as its range/index constraints, type of
+sub-elements, etc. are stored in this class.
+
+\begin{figure}[htbp]
+  \centerline{\psfig{figure=figures/TypeHierarchy.ps,width=5in,silent=}}
+  \caption{Type classification in TyVIS}
+  \label{fig:c++_types}
+\end{figure}
+
+The \textit{uniformity} in the type system is maintained by a
+structured and clean interface for all the types.  The class
+\texttt{VHDLType} serves as a common interface to all the types.
+Since every type class inherits this class, the most abstract and
+common methods of all the types are implemented here.  Similarly,
+methods are implemented in classes higher up in the hierarchy to avoid
+code duplication.
+
+\subsubsection{Scalar types}
+\label{sec:scalar_types}
+
+Scalar types are the most basic types allowed in VHDL.  They are
+further subdivided into \textit{enumeration types}, \textit{integer
+types}, \textit{physical types}, and \textit{floating point types}.
+Each of these subdivisions has a corresponding \Cpp\/ class defined in
+TyVIS.  A declaration of any of these types maps onto a \Cpp\/ class
+derived from the corresponding class.  Information in the type
+declaration such as the range constraints, enumeration literals, units
+in a physical type declaration, are recorded by the methods and
+objects in the class.  The value of the type attributes are dependent
+on these values.  The example of an floating point type and the
+corresponding TyVIS type class shown in
+Figure~\ref{ex:vhdl_type_declaration} illustrates this.
+
+\example{ex:vhdl_type_declaration}{Type declaration in VHDL}{ 
+  \> type foo is range -10.0 to 99.99 \\
+  \> \\
+  \> class SavantfooType: public SavantRealType \{ \\
+  \>\> \ensuremath{\dots} \\
+  \>\> {\rm [Methods and objects]} \\
+  \>\> \ensuremath{\dots} \\
+  \> \}
+  }
+
+\begin{figure}[htbp]
+  \centerline{\psfig{figure=figures/VHDLData.ps,width=5in,silent=}}
+  \caption{Universal types in TyVIS}
+  \label{fig:VHDLData}
+\end{figure}
+
+Although a VHDL design may have any number of scalar types, internally
+every one of these types is mapped onto one of the \textit{universal
+types}.  TyVIS has three universal types, namely: \texttt{UniversalInteger},
+\texttt{UniversalReal}, and \texttt{UniversalLongLongInteger}, as 
+illustrated in Figure~\ref{fig:VHDLData}.  These types, used
+internally in the kernel, are wrappers for the basic types provided by
+a system (such as \texttt{int}, \texttt{double}, and \texttt{long long
+int}).  The behavior and the limits of these types may differ across
+systems, but these wrappers provide a uniform, system independent
+implementation.  Further, these classes store only the necessary data
+and hence are smaller in size than the type classes.  This makes their
+handling more efficient in terms of both memory and time.  The
+Table~\ref{tab:universal_types} shows the relationship between the
+types and the universal types.
+
+\begin{table}
+  \begin{center}
+    \begin{tabular}{||ll||}\hline\hline
+      \textbf{Type(s)} & \textbf{Universal Type} \\\hline
+      IntegerType      & UniversalInteger \\
+      EnumerationType  & UniversalInteger \\
+      RealType         & UniversalReal \\
+      PhysicalType     & UniversalLongLongInteger \\\hline\hline
+    \end{tabular}
+  \end{center}
+  \caption{Mapping between types and universal types}
+  \label{tab:universal_types}
+\end{table}
+
+
+An object of a type is instantiated in TyVIS by instantiating an object
+of that class.  The type information such as range constraints, units in 
+physical types are also passed to the constructor so that the object stores 
+all the relevant type information in itself.  This information is then used 
+by methods provided in the class to supply the attribute values.  The type 
+class does not contain the storage for the value of an object of that type, 
+but a handle to the storage location is maintained here.  This design is 
+crucial for the implementation of aliases and access types.  Since scalar 
+types are the most basic and indivisible types in VHDL, this is where the 
+handle to the storage locations are maintained.  The composite types just 
+have a collection of scalar types, which in turn contain handles to the 
+storage locations.
+
+\subsubsection{Composite types}
+
+An object of a composite type consists of a collection of homogeneous
+objects (\emph{Array Type}) or heterogeneous objects (\emph{Record
+Types}).  A composite type may also have another composite type as its
+element type.  Ultimately, it can be considered as a collection of
+scalar types and access types.  The data contained in an a composite
+type object is stored in these scalar and access type objects, because
+the composite objects may be manipulated as a collection, or as
+individual constituent objects.  The various forms of array and record
+types provide a powerful method to describe collection of signals,
+such as a bus, in hardware.
+
+\subsubsection{Array types}
+
+The array type in VHDL is syntactically and semantically quite different
+from the array type in \Cpp\/.  A simple implementation of a VHDL array type
+as a \Cpp\/ array type will not suffice because:
+
+\begin{itemize}
+\item The index subtype of an array type in VHDL could be user defined
+  scalar type.
+\item In VHDL, the syntax for a multidimensional array is different from
+  an array of arrays, but not in \Cpp\/.
+\item An unconstrained array type can be defined in VHDL, but not in \Cpp\/.
+\item The index constraints of an array type may change at run time.
+\item Array slices are legal in VHDL, but not in \Cpp\/.
+\end{itemize}
+
+Though arrays in \Cpp\/ and VHDL seem to be very different, much of
+their behavior are similar.  VHDL provides more functionality to the
+basic array types, which is emulated in TyVIS by having a wrapper
+class for a \Cpp\/ array.  Some of the differences mentioned above are
+overcome by providing appropriate member functions such as the
+``\texttt{operator []}'' method and the ``\texttt{getSlice()}''
+method.  The ``\texttt{operator []}'' method is overloaded with the
+argument type as the corresponding scalar type to accommodate any
+scalar type as an index subtype.  The ``\texttt{getSlice()}'' method,
+provided for every array type, returns the appropriate slice of the
+array.
+
+An unconstrained array type is implemented similar to a constrained
+array type, but with the index constraints empty, to be filled in at
+the time of instantiation.  Though an unconstrained array type is
+legal, an object of such a type is illegal in VHDL.  The index
+constraints of the object \textbf{must} be available when it is
+instantiated.  At that time, the appropriate argument is passed to to
+the constructor of the unconstrained array type to instantiate it.
+
+A multidimensional array is implemented as arrays of arrays since
+semantically they are equivalent.  The intermediate anonymous arrays
+are constructed using the templatized ``\texttt{Vector}'' class
+provided in the TyVIS kernel.  Since the \texttt{Vector} class and the
+\texttt{ArrayType} class have a common interface, they show similar
+external behavior.
+
+\subsubsection{Record types}
+
+The record type collects a group of (possibly) heterogeneous objects
+into one type instance.  In TyVIS, a VHDL record maps onto a class
+declaration with some supporting methods.  A few constructors are
+required to instantiate the objects of the record type.  The TyVIS
+kernel needs certain methods to manipulate the data within the
+objects, and a few more methods to implement the type attributes.
+
+\subsubsection{Access types}
+
+Access types may be considered as the equivalent of C/\Cpp\/
+\textit{pointers} in VHDL.  They are used mainly to store data whose
+size is not know in advance, or to represent complex relationships
+between objects.  The space required to store the data may be
+\textit{allocated} or \textit{deallocated} at run time.  Since
+pointers and access types have similar semantics, it is only natural
+to implement access types as pointers in \Cpp\/.  All access type
+classes in TyVIS derive from the class \texttt{AccessType} defined in
+the kernel.  The access type class contains a pointer to its
+\textit{subtype indication} as found in the access type declaration,
+and some methods to access this pointer.  The VHDL operators
+\textit{new} and \textit{deallocate} are implemented as
+\texttt{new} and \texttt{delete} operators in \Cpp\/ respectively.
+
+State saving in \warped\/ gives rise to two problems with this simple
+implementation.  The first problem arises when the same object is
+pointed to by two different access type objects.  When the state of
+the process is saved, it is not sufficient if both these access type
+objects are stored, the data pointed to by the objects have to be
+stored too.  However, only one copy of the data must be stored and
+both the access types must point to this storage location.  The second
+problem concerns the memory management in TyVIS.  The copies of the
+saved states are deleted by \warped\/ when they are no longer
+necessary.  This process involves the freeing of the memory allocated
+for all the objects in that state.  If more than one access type
+object in this state is pointing to the same data object, the memory
+pointed to by these objects must be deleted just once.  Such special
+requirements of \warped\/ have to be met to make even a simple
+implementation successful.
+
+\subsubsection{File types}
+\label{sec:file_types}
+
+File types provide a method of writing data to the persistent storage
+devices in the computer, generally a file system.  Many of the frequently
+used methods are predefined for all the file types, but a user can add
+more properties to the file type by defining subprograms.  The following
+two questions have to be answered to implement file type objects on
+\warped.
+
+\begin{itemize}
+\item Due to the distributed nature of \warped, how are simultaneous
+  operations to the same file type object handled?
+\item The execution of an event is not confirmed until it is
+  committed. Therefore as a result of the execution, I/O can not be
+  performed immediately.  How are file operations handled correctly?
+\end{itemize}
+
+The answer to the first question is obtained partly from the \LRM,
+\LrmRef{4.3.1.4}.  If multiple file objects are associated with the same
+external file, the language does not specify any order in which operations
+on the file are performed.  Since this order is not defined, the scheduling
+of the file operations can be safely neglected by TyVIS, and this ordering
+is defined by \warped.  The problem raised by the second question can be
+solved by maintaining separate file queues for each of the file type
+objects in the system.  Number of such objects may vary at run time since
+file types declared in subprograms are elaborated dynamically.  File queues
+have to be dynamically instantiated and manipulated to accommodate dynamic
+elaboration of file type declarations.  The commitment of the events
+representing file operations are managed by \warped.
+
+\subsubsection{Subtypes}
+
+A subtype is used in VHDL to constrain a base type.  It may also be
+used to add a \textit{resolution function} to the base type.  This
+semantics is similar to derivations in \Cpp\/.  TyVIS implements
+subtypes as derived classes of the base type class.  The derived class
+methods may be modified to reflect the additional constraints (if
+any).  If the subtype is a scalartype, the constructor instantiates the 
+object along with the type information but the type attributes are still 
+implemented by methods in the base class, thereby avoiding code redundancy.  
+The type attributes of subtypes, other that scalar subtypes, 
+are implemented by overriding the definitions in the base class.
+
+\section{Predefined types}
+
+The \LRM\/ defines certain predefined types in VHDL, included in the
+packages, \texttt{standard} and \texttt{textio}.  TyVIS contains these
+two packages as a part of the kernel.  Apart from a few types such as
+\texttt{boolean} and \texttt{time}, TyVIS does not consider the types
+in these packages any differently from the user defined types.  This makes
+the handling of all the types in the system uniform and generic.
+
+
+%%objects.tex
+\section{Design of objects}
+\label{chp:design_objects}
+
+Objects are the containers of values of a particular type.  VHDL
+provides four classes of objects: \textit{variables},
+\textit{constants}, \textit{files}, and \textit{signals}.  An object
+is instantiated by pairing an object class with a type. Although the
+type identifies the set of allowed values, the class to which the
+object belongs dictates how this value is stored, manipulated, and
+updated.
+
+An object is created in \tyvis\/ by instantiating a type class as any one
+of the four object classes, determined by an argument passed to the
+constructor at the time of instantiation.  In the case of a scalar type,
+the constructor creates an object of the specified class and maintains a
+reference to that object in the type.  The composite type constructor
+instantiates its sub-elements as the same object class.  This process
+continues till every scalar sub-element of the composite type is
+instantiated with the same object class.
+
+\begin{figure}[htbp]
+  \centerline{\psfig{figure=figures/ObjectHierarchy.ps,width=4.4in,silent=}}
+  \caption{Object class hierarchy in \tyvis}
+  \label{fig:object_hierarchy}
+\end{figure}
+
+The distributed \textit{lookahead-rollback} paradigm of \warped\/
+simulation forces each process to maintain a separate copy of the objects.
+Consider the case when an object is declared in an architecture and used
+in two processes, \A\/ and \B, within the body of the architecture as
+illustrated in Figure~\ref{ex:multiple_object_copy}.
+
+\example{ex:multiple_object_copy}{Access of an object by multiple processes}{ 
+  \> architecture foo of bar is \\
+  \> {\rm [Declaration of the object \O]}; \\
+  \> begin \\
+  \>\> \A: process \\
+  \>\>  begin \\
+  \>\>\>  $\ldots$ \\
+  \>\>\>  {\rm [Accesses object \O]}; \\
+  \>\>\>  $\ldots$ \\
+  \>\>  end process \A; \\
+  \>\>  \\
+  \>\>  \B: process \\
+  \>\>  begin \\
+  \>\>\>  $\ldots$ \\
+  \>\>\>  {\rm [Accesses object \O]}; \\
+  \>\>\>  $\ldots$ \\
+  \>\>  end process \B; \\
+  \>  end;
+  }
+
+\begin{itemize}
+\item Process \A\/ might process an event and update the value of the
+  object.  This action must not modify \B's object since \B\/ might be
+  processing events at a different LVT, and updating this object would
+  violate causality.
+\item If either of these processes rollback, the effect should not be felt
+  at the other process.  
+\item Processes \A\/ and \B\/ might be executing in physically different
+  processors and hence can not share data.
+\end{itemize}
+
+Many of the operations in VHDL are applicable to more than one object
+class.  To accommodate this, a common interface is maintained between
+all the objects by means of a hierarchy as illustrated in the
+Figure~\ref{fig:object_hierarchy}.  The rest of this section explains
+these classes in greater detail while elaborating on the design
+decisions and the reasons behind them.  Most importantly, the
+Section~\ref{sec:signals} describes how the behavior of a VHDL signal
+is modeled in \tyvis.
+
+\subsection{Variables}
+
+As in most programming languages, VHDL also provides variables.  A
+variable object contains a value of the declared subtype.  Its value
+may be modified by a variable assignment statement.  The value of the
+variable after the assignment is the value of the expression in the
+assignment statement.  Since this behavior is similar to the behavior
+of variables in \Cpp\/, a VHDL variable can be simply modeled in
+\tyvis\/ as a \Cpp\/ variable.  A variable is created by instantiating
+the type class as shown in Figure~\ref{ex:variable_declaration}.
+
+\example{ex:variable_declaration}{A variable declaration}{
+  {\rm A VHDL variable declaration:} \\
+  \> variable var: foo; \\
+  \> \\
+  {\rm A corresponding \tyvis\/ variable declaration:} \\
+  \> SavantfooType var(ObjectBase::VARIABLE);
+  }
+
+\subsection{Constants}
+
+As the name suggests, a constant object creates an object that stores a
+value which can not be modified.  The only difference between a constant
+and a variable object is that the value of a variable object may be
+modified but that of a constant may not be.  Obviously, a variable may be
+used instead of a constant, which is how constants are implemented in
+\tyvis.  The reuse of the variable object for constants reduces the amount
+of code in the kernel and makes code maintenance easier.
+
+\subsubsection{Generic Constants}
+
+VHDL allows the user to write generic design units using generic constants.
+The value of a generic constant is evaluated when it is elaborated.  In
+\tyvis, generic constants are instantiated at the time of elaboration.  The
+process of their instantiation, evaluation and elaboration are explained in
+greater detail in Section~\ref{chp:elaboration}.
+
+\subsection{Files}
+\label{sec:files}
+
+Section~\ref{sec:file_types} explains how \warped\/ requires file type
+objects to be handled, and the reasons for this special handling.
+\warped\/ I/O handling, requires that all files in the system should
+be represented as a file queue in the \texttt{TimeWarp} class.
+Following this method, a list of file queues is maintained in \tyvis.
+Each element of the file queue list represents a file in the
+corresponding VHDL code.  The elements of this list could vary at
+runtime if a file is opened \textit{dynamically} in a subprogram.
+\tyvis\/ manages this by adding and removing file queues from this
+list at runtime.
+
+Only the data contained in scalar type objects need to be written to
+file, since composite type objects are just a collection of scalar
+type objects.  Since every scalar type is mapped on to a
+\textit{universal type} (Section~\ref{sec:scalar_types}), only
+universal types need to be written to file.  Every scalar type object
+makes use of the methods in the kernel to write universal type objects
+to the file.
+
+\subsection{Signals}
+\label{sec:signals}
+
+Signals \index{signal} constitute one of the most important object
+classes in VHDL.  The semantics of their assignment, update, and
+evaluation are different from that of variables in most programming
+languages.  This section will focus in detail on how \tyvis\/
+implements these semantics specified by the \LRM.  In general, a
+signal assignment generates an event with the required information and
+sends this to all the \textit{fanouts} of the signal.  On receipt of
+such an event, a process updates its copy of the signal driver,
+performs the signal resolution and type conversion to compute the
+effective value of the signal.  Before discussing the signal value
+propagation in detail, some terms need to be defined.
+
+\begin{figure}[htbp]
+  \centerline{\psfig{figure=figures/signal.ps,height=2.5in,silent=}}
+  \caption{Signal propagation between processes}
+  \label{fig:sig_prop}
+\end{figure}
+
+\begin{itemize}
+\item The \textbf{fanout} of a signal is the set of processes, after
+  elaboration, that evaluate a reference to that signal in an expression.
+  Note that this does not include processes that \textit{drive} the signal
+  without evaluating their reference.  Since each of these processes
+  maintain a separate copy of the signal, the new value of the signal must
+  be notified to all these processes on a signal assignment.
+\item \textbf{Drivers} of a signal are the processes that assign value to
+  the signal.  If the signal is resolved, these values, after appropriate
+  type conversion, are used in determining the effective value of the
+  signal using the resolution function.
+\item A value may be assigned to a signal with a delay, which sets the
+  driver to that signal the specified value after the delay.  There
+  may be many such values in the future.  These values of the signal,
+  at the current and future times, is called the \textbf{projected
+  output waveform}.
+\end{itemize}
+
+\subsubsection{Signal value propagation}
+\label{sec:signal_value_prop}
+
+The signal value propagation is broadly divided into four distinct
+phases: the signal assignment phase, the marking phase, the driver
+update phase, and the resolution phase.  In the signal assignment
+phase, the projected output waveform of the signal is modified.  The
+drivers of the signals are updated in the driver update phase, and the
+effective value is computed using the resolution functions and the
+type conversion functions in the resolution phase.
+
+A signal assignment statement does not assign the value to the signal as
+the name suggests, it just modifies the projected output waveform of that
+signal.  An execution of a signal assignment statement generates an event
+with the appropriate information and sends it to all the fanouts of the
+signal as illustrated by Figure~\ref{fig:sig_prop}.  In the case of a
+composite signal, events corresponding to each of the constituent scalar
+signal assignment are sent individually.  The data in the event,
+\texttt{SigEvent}, includes the id of the signal, and the the delay
+corresponding to that signal assignment statement.  The receive time
+of the event is computed by adding the value of the delay expression
+to the current time.  On receipt of the event it is inserted into the
+appropriate input queue, to be executed in chronological order.  This
+design integrates the \textit{transaction list} mentioned in the
+\LRM\/ into the input queue.
+
+Apart from the input queue, each process maintains a \textit{marked
+queue} used to implement the algorithm for updating the projected
+output waveform given in the \LRM~\LrmRef{8.4.1}.  Unlike the signal
+resolution, marking is performed at the source.  After sending the
+events to the appropriate destinations, a copy of the event is
+inserted into the marked queue.  The steps given in the algorithm is
+then performed on this queue.  For every event in the marked queue
+corresponding to a deleted transaction, a \textit{negative event} is
+generated to cancel the event generated earlier.  Since these are
+performed in succession, the events are canceled in the input queue
+even before the process has a chance to execute them.
+
+The driver update phase commences when the \texttt{SigEvent} is
+executed at the receiving process.  The driving values of the signals,
+maintained in the \textit{source tree} are updated.  In the case of
+composite signals multiple events may be received at the current time
+corresponding to each of the constituent scalar sub-elements.  Once
+this phase is complete, all the drivers are in place to compute the
+effective value in the resolution phase.
+
+The effective value of the signal is computed in the resolution phase.
+Detailed data structures describing the hierarchy of the design is
+built during the elaboration of the design.  These data structures
+contain the type conversion functions and the resolution functions
+that have to be executed to evaluate the effective value.  This
+process of effective value computation is explained in greater detail
+in the following section.
+
+\subsubsection{Signal resolution and type conversion}
+
+\begin{figure}[htbp]
+  \centerline{\psfig{figure=figures/source_tree.ps,silent=}}
+  \caption{Source tree data structure}
+  \label{fig:source_tree}
+\end{figure}
+
+Every resolved signal maintains a \textit{source tree} data structure
+that contains the value of its sources, the resolution functions, and
+the type conversion functions obtained during elaboration.  The
+Figure~\ref{fig:source_tree} illustrates one such source tree.  This
+tree consists of two kinds of nodes, the internal nodes
+(\texttt{SourceInfo}), and the leaf nodes (\texttt{SourceData}).
+
+\begin{figure}[htbp]
+  \centerline{\psfig{figure=figures/internal_node.ps,silent=}}
+  \caption{Internal node in source tree}
+  \label{fig:internal_node}
+\end{figure}
+
+The internal node, shown in Figure~\ref{fig:internal_node} corresponds
+to a component instantiation statement, and it contains information
+regarding the resolution and type conversion functions found in the
+component instantiation statement.  The \textit{up type conversion
+function} represent the function found in the formal part of the
+association element of a component instantiation statement.
+Similarly, the \textit{down type conversion function} corresponds to
+the function in the actual part\footnote{These are named so due to way
+the source tree is built.}.  The children of the internal node
+represent the concurrent statements in the body of the architecture
+corresponding to the component instantiation statement.  This
+information is available only at the time of elaboration, which is the
+reason this structure has to be built then.
+
+\begin{figure}[htbp]
+  \centerline{\psfig{figure=figures/leaf_node.ps,silent=}}
+  \caption{Leaf node in source tree}
+  \label{fig:leaf_node}
+\end{figure}
+
+The drivers of the signal are represented by the leaf nodes, shown in
+Figure~\ref{fig:leaf_node}.  Each leaf node corresponds to a
+concurrent statement (which is ultimately a process statement) that
+drives this signal, and contains the \textit{id} of this source, and
+the value of the driver.  This is the value that is updated in the
+driver update phase of the signal value propagation.  Note that an
+internal node can \textbf{never} be a driver of a signal, neither can
+a leaf node have a component instantiation statement in it.
+
+For signals of scalar types this leaf node contains a variable of the
+same type which stores the value of the driver.  For composite signals
+however, each of the scalar sub-element maintains its own source tree.
+This is necessary to accommodate the two kinds of composite resolved
+signals: signals of composite resolved types and composite signals of
+resolved subtypes as illustrated in
+Figure~\ref{ex:composite_resolved_types}.  In the case of the former,
+the entire composite type is resolved, and the resolution function is
+invoked with an array composed of all the composite drivers.  The
+latter composite signal is not resolved, but its composite
+sub-elements are resolved.  In this case, each of the sub-elements may
+have different number of drivers, and hence can not share the same
+source tree.
+
+\example{ex:composite_resolved_types}{Kinds of composite resolved types}{  
+  {\rm [\texttt{resolve} is an appropriate resolution function]} \\
+  {\rm Composite resolved type:} \\
+  \> type foo is array(1 to 10) of integer; \\
+  \> subtype resolved\_foo is resolve foo; \\
+  \> \\
+  {\rm Composite type of resolved subtype} \\
+  \> type foo is resolve integer; \\
+  \> type resolved\_foo is array(1 to 10) of foo;
+  }
+
+The resolution phase of the signal value propagation is concentrated
+almost entirely in this structure.  The \tyvis\/ kernel invokes the
+\texttt{resolve()} method of the topmost node in the source tree.  This in
+turn invokes the \texttt{resolve()} methods of its children (if any).
+This finally results in a call to the \texttt{resolve()} method of a
+leaf node, which returns the value of the driver it contains.  An
+internal node gets this value, applies the up type conversion function
+in the corresponding child, and concatenates all these values into an
+array.  This array is passed as an argument to the resolution function
+in the internal node.  The result of the resolution function is
+returned by the \texttt{resolve()} method of the internal node.  This
+process continues till the resolve function in the topmost node is
+reached.  Once the top most node has been reached, each process
+applies the appropriate sequence of down type conversion functions to
+obtain the effective value of the signal at that process.  The
+sequence of function calls to perform the down type conversions may be
+different for the different processes.  The effective value thus
+obtained is assigned to the signal.  Since the \tyvis\/ kernel is
+distributed, each resolved signal evaluates this value independently.
+
+\subsubsection{Implicit signals and signal attributes}
+
+The kernel is responsible for updating each of the implicit signals in
+the design.  The value of the implicit signals \texttt{S'QUIET}, and
+\texttt{S'TRANSACTION} change when a \textit{transaction} occurs on the
+signal whereas \texttt{S'STABLE} changes only when an \textit{event}
+occurs on the signal.  Once the effective value of the signal is computed,
+these signals are updated by comparing the old value to the new value.
+The implicit signal \texttt{S'DELAYED} is not implemented in the kernel,
+rather a new equivalent process statement is generated as described in the
+\LRM~\LrmRef{14.1}.  Instead of updating all the other attributes, only
+the last active time, the last event time, and the last value are
+saved.  All the other attributes such as \texttt{S'EVENT},
+\texttt{S'ACTIVE}, \texttt{S'LAST\_EVENT}, \texttt{S'LAST\_ACTIVE},
+\texttt{S'LAST\_VALUE}, can be computed from this information.  The
+attributes \texttt{S'DRIVING}, and \texttt{S'DRIVING\_VALUE} can be
+computed from the source tree.
+
+\subsection{\texttt{SignalNetinfo}}
+
+\texttt{SignalNetinfo} is a data structure maintained by the \tyvis\/
+kernel for every signal for gathering information about the signal during
+elaboration.  This structure performs two major functions: maintains the
+fanout(s) and the source tree of the signal.  Data is added to this
+structure and passed up in a bottom-up approach during elaboration to
+construct the fanout and the source tree.  The
+\texttt{SignalNetinfo} is treated as an object by \tyvis\/ so that in
+can be instantiated similar to the signal corresponding to it,
+particularly for a composite type where each sub-element is also a
+signal and hence needs a corresponding \texttt{SignalNetinfo}.
+
+\subsection{Aliases}
+
+Aliases provide an alternate name for items which can be used to make
+the model clearer.  They can be broadly classified into two kind:
+those that alias data items, and those that alias non data items.  The
+alias of non data items is purely a parser-analyzer problem and does
+not have any function in the simulation kernel.  However, the object
+aliases needs to be addressed by the simulation kernel.
+
+\subsection{Object aliases}
+
+\begin{figure}[htbp]
+  \centerline{\psfig{figure=figures/alias.ps,width=3in,silent=}}
+  \caption{Object Alias}
+  \label{fig:alias}
+\end{figure}
+
+In short, object aliases is handled in \tyvis\/ by the use of multiple
+pointers to refer to the same location.  As explained in
+Section~\ref{sec:scalar_types}, types maintain a handle to the storage
+location where the data object is stored.  Aliases of scalars are
+implemented by creating an instance of a type and pointing the handle
+to the original object as illustrated in Figure~\ref{fig:alias}.
+However aliases of composite types are not as simple because the alias
+of an array object can have a range constraint different from the
+original object as illustrated in Figure~\ref{ex:alias}.  In this
+example, \texttt{foo(1)} and \texttt{bar(10)} refer to the same
+object.  \tyvis\/ accomplishes this by maintaining the range
+constraints in the type, and since the alias object is another
+instance of the type can have its own range constraints.  The data
+shared by these are accessed according to the index constraint in
+them.
+
+\example{ex:alias}{Alias of an array object}{
+  variable foo: bit\_vector(1 to 10); \\
+  alias bar is bit\_vector(10 downto 5) is foo(1 to 6);
+  }
+
+
+%%concurrent.tex
+\section{Concurrent Statements}
+\label{chp:design_concurrent}
+
+A hardware system consists of various components executing
+asynchronously and simultaneously.  These components can interact with
+each other by reading and updating signals.  VHDL provides concurrent
+statements to model these parallel phenomenon and signals to describe
+the interactions.  To make modeling easier, various types of
+concurrent statements are provided.  Each of these concurrent
+statements form an asynchronous parallel executing entity that
+interacts with other such statements to model the behavior of the
+design.  This section will focus on the design of the concurrent
+statements in \tyvis.  Most importantly, the process statement, which
+forms the basic building block of the design.  Following this, the
+design of the other forms of concurrent statements are discussed.
+Instead of implementing all these concurrent statements in
+\tyvis, these statements are \textit{transmuted}, to equivalent process
+statements according to the rules given in the \LRM.  Once this is
+accomplished, only process statements need to be implemented in \tyvis.
+
+\subsection{Process statement}
+
+The process statements provide a way of describing sequential
+algorithms in VHDL.  Since \warped\/ is used as the underlying
+simulator, there is not much choice regarding the implementation of
+the process statement.  A VHDL process statement has to be mapped on
+to a \warped\/ process, so that it can be executed concurrently with
+the other processes.  The scheduling and the synchronization
+mechanisms are handled by \warped.  As easy as that might seem, some
+of the most intriguing and challenging problems come along with this
+implementation.  This section will highlight some of these problems,
+and the associated solutions adopted in \tyvis.
+
+\subsubsection{Process statement}
+
+\warped\/ dictates that the process statement be built as a class with
+certain properties (refer to the \warped\/ documentation). This alone
+is not sufficient to implement the simulation semantics of the process
+statement.  It needs additional features to handle signals, wait
+statements, VHDL file I/O, VHDL types, etc.  All these features are
+built into the \texttt{VHDLKernel} class in \tyvis.  Every process
+statement in \tyvis\/ is derived from this class, and thus inherits
+all these properties.  The most important among these, the signal
+handling and the wait statement implementation, are discussed here.
+
+A process can send an event to all the fanouts of a signal using the
+method \texttt{assignSignal($\ldots$)} provided by
+\texttt{VHDLKernel}.  When a process has an event to be executed in
+the input queue, the scheduler in \warped\/ invokes the method
+\texttt{executeProcess()} of the process.  This method, implemented in
+\texttt{VHDLKernel} executes all the events for the current simulation
+cycle before returning control back to \warped.  A signal update event
+invokes the algorithm described in Section~\ref{sec:signal_value_prop}
+to update the drivers, effective value, and the attributes of the
+signal.  A list of signals that are active during this cycle is
+maintained so that the process can determine if it should resume from
+a wait.
+
+A wait statement is implemented in \tyvis\/ by sending a wait message
+to itself after the appropriate delay.  This wait event is inserted
+into the input queue and delivered to the process at the appropriate
+time.  The receipt of a wait event indicates that a wait has timed
+out.  A flag is set in the state of the process statement to inform it
+to resume from the wait.
+
+Once all the events are processed by \tyvis, the resolution phase of
+signal value propagation is performed.  Finally, the sequential
+statements contained in the body of the process statement are executed
+by invoking the \texttt{executeVHDL()} virtual method in the kernel,
+which is \textit{overridden} in the user-defined process statement
+class.  This method checks the wait statement on which the process is
+waiting currently, computes its status by checking if it has timed
+out, if an event has occurred on the signals in it's sensitivity list,
+and if the condition clause evaluates to true (if necessary).
+Depending on theses conditions the wait statement either resumes and
+executes the following sequential statements till it suspends, or
+continues suspension and returns control back to the \tyvis\/ kernel.
+This process is explained in greater detail in
+Section~\ref{sec:wait_statement}.
+
+\subsubsection{Process state}
+
+The state of the process stores the persistent values in the process.
+The process is invoked by \warped\/ during every simulation cycle in
+which the process has an event to be executed.  The state of the
+process may be changed during one cycle, and these changes have to be
+carried over to the next invocation.  Further, due to the
+lookahead-rollback synchronization mechanism, \warped\/ saves and
+restores the state of a process transparently as required.  A separate
+state class is necessary to implement such a state saving scheme.
+
+\tyvis\/ requires the user defined state class to implement the
+\texttt{locateSig($\ldots$)} method.  This is used by the kernel to access
+the signals declared in this class using a signal id.  The state class
+should also contain a list of the wait statements in the state, which
+the kernel uses to check and update their status.  The user state
+class must be derived from the kernel class \texttt{VHDLKernel\_state}
+which contains some of the persistent data required by the kernel.
+
+\subsubsection{Sensitized process statement}
+  
+A sensitized process statement differs from a process statement in
+that it contains a sensitivity list.  Further, a sensitized process
+statement is not allowed to contain a wait statement in its body.  The
+\LRM\/ gives a method to convert any sensitized process statement to a
+process statement with no sensitivity list by appending an appropriate
+wait statement to the sequential statement list in its body.
+Figure~\ref{ex:sens_process} illustrates this equality.  This
+transformation is achieved by a process called \textit{transmute}.
+
+\example{ex:sens_process}{Transmutation of sensitized process statememt}{
+  \textrm{Sensitized process statement:} \\
+  \> label: process (<sensitivity list>) \\
+  \>\> <process declarative part> \\
+  \> begin \\
+  \>\> <Sequential statements> \\
+  \> end process label; \\
+  \> \\
+  \textrm{Equivalent process statement:} \\
+  \> label: process \\
+  \>\> <process declarative part> \\
+  \> begin \\
+  \>\> <Sequential statements> \\
+  \>\> wait on <sensitivity list>; \\
+  \> end process label;
+  }  
+
+The \LRM\/ defines equivalences between various constructs, such as
+the one mentioned above.  \tyvis\/ uses these equivalences to
+implement the minimal set of constructs necessary such that every
+other construct can be modeled as a combination of these.  This
+process is called \textit{transmute}.  Minimizing the number of
+implemented constructs provides the following advantages:
+
+\begin{itemize}
+\item Minimizes the code generation required.
+\item Maintenance required is greatly reduced.
+\item Allows reuse of constructs which aids in debugging the system.
+\end{itemize}
+
+%\subsection{Postponed processes}
+
+%A postponed process differs from a non-postponed process in that when the
+%former is resumed, it does not execute till the last \textit{delta cycle}
+%of the current simulation cycle.  
+
+\subsection{Other Concurrent statements}
+
+All the concurrent statements mentioned in this section are transmuted
+to an equivalent process statement according to the rules given by the
+\LRM.  Once this is achieved, these process statements can be
+implemented in \tyvis\/ as any other process statement.  The rest of
+this section illustrates how these concurrent statements are
+transmuted.
+
+\subsubsection{Concurrent procedure call statement}
+
+\example{ex:conc_procedure}{Transmutation of a concurrent procedure call
+  statement}{
+  \textrm{Concurrent procedure call statement:} \\
+  \> label: ConcurrentProcedureCall(<argument list>); \\
+  \> \\
+  \textrm{Equivalent process statement:} \\
+  \> label: process \\
+  \> begin \\
+  \>\> ConcurrentProcedureCall(<argument list>); \\
+  \>\> wait on <sensitivity list>; \\
+  \> end process;
+  }
+
+A concurrent procedure call statement is transmuted to a process
+statement as shown in Figure~\ref{ex:conc_procedure}~\LrmRef{9.3}.
+The body of the transmuted process statement contains a sequential
+procedure call to the same procedure and a wait statement.  The
+sensitivity list of the wait statement is built from the argument list
+of the procedure call statement according to the rules given in the
+\LRM~\LrmRef{8.1}.
+
+\subsection{Concurrent Assertion statement}
+
+\example{ex:conc_assertion}{Transmutation of a concurrent assertion
+  statement}{
+  \textrm{Concurrent assertion statement:} \\
+  \> label: <Assertion Statement>; \\
+  \> \\
+  \> label: process \\
+  \> begin \\
+  \>\> <Assertion Statement>; \\
+  \>\> wait; \\
+  \> end process;
+  }
+
+A concurrent assertion statement is transmuted to a process statement
+with the statement part containing the original assertion statement
+and an empty wait statement as shown in
+Figure~\ref{ex:conc_assertion}~\LrmRef{9.4}.  If the boolean condition
+expression of the assertion statement contains a name that denotes a
+signal, the equivalent process statement contains a final wait
+statement built according to the rules given in the \LRM~\LrmRef{8.1}.
+  
+\subsubsection{Concurrent Signal Assignment statement}
+
+A concurrent signal assignment statement can take one of two forms, a
+conditional signal assignment statement or a selected signal
+assignment statement.  The \LRM~\LrmRef{9.5} gives detailed
+transformation scheme to convert either of these concurrent statements
+to a process statement.  Similar to the other transmutations, this
+transmuted process also contains a final wait statement with a
+sensitivity list.  A conditional signal assignment statement is
+transmuted to an if statement and a selected signal assignment
+statement is converted to a case statement.
+
+\subsection{Component instantiation statement}
+
+VHDL allows designs to be built hierarchically by building subcomponents
+and interconnecting them to model the whole system.  A component
+instantiation statement serves just this purpose.  The interconnections of
+these components must conform to the interface specified by the component.
+The processes in the components are instantiated when the component
+instantiation statement is elaborated.  If this component contains other
+component instantiation statements within them, they are elaborated in
+turn, finally resulting in a ``sea'' of processes.  These processes are
+then simulated by the \tyvis\/ simulation kernel.  Elaboration of component
+instantiation statements are explained in greater detail in
+Section~\ref{chp:elaboration}.
+
+\subsection{Block statement}
+
+A block statement represents a hierarchical portion of the design.  It
+may contain other concurrent statements within it, including another
+block statement.  Similar to a component instantiation statement, the
+concurrent statements within a block statement are instantiated during
+elaboration.  A block statement helps in the hierarchical design of
+the system.  It does not participate in the simulation of the
+system. A detailed description of the elaboration of a block statement
+is given in Section~\ref{sec:elab_block}.
+
+\subsection{Generate statement}
+
+A portion of a design may be conditionally elaborated using a
+\textit{generate if} statement.  The \textit{generate for} statement can be
+used to elaborate a portion iteratively.  The concurrent statements in a
+generate statement are elaborated depending on the conditions specified.
+\tyvis\/ implements a generate statement using an \texttt{if} statement or
+a \texttt{for} statement in \Cpp\/.  The concurrent statements in the
+generate statements are elaborated recursively till all the process are
+instantiated and signals interconnected as required.  The exact
+implementation of the elaboration and issues involved are discussed
+further in Section~\ref{sec:elab_generate}.
+
+
+%%sequential.tex
+\section{Sequential Statements}
+\label{chp:sequential_statement}
+
+As in many other sequential programming languages, VHDL offers a
+variety of sequential statements to model the behavior of a process
+statement or a subprogram.  Most of these statements can be directly
+converted to a corresponding \Cpp\/ statement.  However, some of these
+statements, such as the signal assignment statement and the wait
+statement that are unique to VHDL, require special attention.  This
+section will focus on some of these programming constructs.  It will
+discuss the constraints and the reasons for such a design.
+
+\subsection{Signal assignment statement}
+
+\example{ex:signal_assignment}{A Signal Assignment Statement}{
+  \textrm{A VHDL signal assignment statement:} \\
+  \> sig <= <value\_expression> after <time\_expression>; \\
+  \> \\
+  \textrm{Equivalent statement in \tyvis:} \\
+  \> assignSignal(sig, <source\_id>, <value\_expression>, \\
+  \>\>\>\>        <time\_expression>, <reject\_time>);
+  }
+
+A signal assignment statement is used to modify the projected output
+waveform of a signal.  The method \texttt{assignSignal($\dots$)}
+provided in \texttt{VHDLKernel} is used to implement this.  The
+function generates events to all the fanouts of the signal,
+\texttt{sig}, instructing the corresponding drivers to assume the
+value given by the \texttt{value\_expression} after the time
+\texttt{time\_expression}.  The parameter \texttt{source\_id}
+identifies the source that is driving the signal, which is used to
+update the corresponding driver if the signal is resolved.  Since only
+a process can drive a signal, the process id is used to identify the
+driver of the signal.  The value of \texttt{reject\_time} decides the
+\textit{pulse rejection limit} of the assignment, used during the
+marking phase.  \tyvis\/ does not differentiate between
+\textit{inertial} and \textit{transport} mechanisms.  Every assignment is
+assumed to have a transport delay mechanism with the appropriate pulse
+rejection limit.  Figure~\ref{ex:signal_assignment} shows a typical signal
+assignment statement and the equivalent \Cpp\/ code to implement the
+statement in \tyvis.  Multiple waveforms in a signal assignment statement
+are converted to a sequence of signal assignment statements, one for each
+waveform.
+
+The signal assignment to a scalar signal generates one event for each
+of the fanouts of the signal.  Since every sub-element of a signal of
+a composite type is also a signal, the whole composite signal, a
+slice, or a scalar sub-element can be assigned to.  \tyvis\/ handles
+signals of composite types by \textit{unrolling} them to the scalar
+sub-elements automatically.  An event is sent for each of the scalar
+signals of the composite signal when the whole composite, or a slice
+of it is assigned to.  Though this might result in a large number of
+messages being sent across the network, it does not affect the
+performance significantly since \warped\/ has a \textit{message
+aggregation} strategy built into it.
+
+\subsection{Wait statement}
+\label{sec:wait_statement}
+
+A wait statement causes the simulation to suspend processing of the
+sequential statements following it and resume when any one of the
+signals in its sensitivity list (if any) become active and the
+condition clause (if any) evaluates to true.  Once the timeout
+expires, it resumes irrespective of the sensitivity or the condition.
+If the timeout expression is omitted, it defaults to
+\texttt{TIME'HIGH}, which essentially means that the wait never
+resumes (other than due to sensitivity and condition).  An
+implementation of the wait statement must be able to suspend execution
+of execution at any point in a process or a procedure, and resume the
+execution from the same point depending on the conditions or when the
+time has expired, whichever occurs first.  In addition, an
+implementation on \warped\/ must be able to rollback by restoring a
+previous state.
+
+\subsubsection{Wait statement in a process}
+
+\begin{figure}[htbp]
+  \centerline{\psfig{figure=figures/wait.ps,height=2in,silent=}}
+  \caption{Wait statement in a process}
+  \label{fig:wait_process}
+\end{figure}
+
+The execution of a wait statement proceeds in three distinct phases.
+First, when the wait event is encountered, a corresponding event is
+sent by the process to itself after the specified delay as illustrated
+by the Figure~\ref{fig:wait_process}.  This is achieved by a call to
+the \texttt{executeWait} method in \texttt{VHDLKernel}.  The
+id\footnote{To identify the wait statements within a process uniquely,
+an id is assigned to each wait statement.} of the wait statement that
+the process is waiting on and the time at which it was executed is
+recorded so that execution can be resumed from the same point.  The
+second phase starts with the arrival of a wait event.  When this event
+is received by the process after the timeout interval, a flag in the
+state of the process is set indicating that the timeout has expired.
+Activity of signals is detected by examining the variable
+\texttt{eventSigs} maintained in the kernel.
+
+The third and final phase takes place when the body of the process is
+executed.  Irrespective of whether the process resumes or remains
+suspended, the body of the process is executed by invoking the
+\texttt{executeVHDL} method of the process.  The first few instructions of
+this method examine the \texttt{waitLabel} variable in the state, which
+indicates the wait statement on which the process is waiting on.
+Depending on this, it makes an unconditional jump (\texttt{goto}) to the
+corresponding instruction.  Here, a call to the method \texttt{resumeWait}
+is made with the id of the wait statement and the value of the condition
+expression.  This method determines, according to the rules specified in
+the \LRM, if the wait resumes or continues suspension.  On resumption, the
+statements following the wait statement in the \texttt{executeVHDL} method
+are executed till it suspends again.  If the wait does not resume, the
+method \texttt{executeVHDL} returns, and control is transferred back to
+the kernel.
+
+\subsubsection{Wait statement in a procedure}
+
+VHDL also allows a wait statement in the body of a procedure.  A few
+problems arise when such a wait statement is implemented in \tyvis\/
+as mentioned above.
+
+\begin{itemize}
+\item The control has to be transferred back to the kernel, which can not
+  be achieved with just a return statement, as in the case of a wait
+  statement in a procedure.  The calling path has to be backtracked all
+  the way back to the kernel\footnote{Note that the procedure call could
+    be recursive.}.
+\item To resume from the wait statement, control has to be transferred to
+  the wait statement from the kernel.  The path taken by the control
+  transfer has to be the same as the natural call path.
+\item The temporary variables in the procedures must be stored in the
+  state of the process from which the call was initiated to take care of
+  rollback and state saving.
+\item Finally, the same procedure may be invoked by different processes,
+  and when the wait statement returns, control should be transferred to
+  the correct process.
+\end{itemize}
+
+All the above mentioned problems are solved in \tyvis\/ maintaining a
+\textit{call stack} in the process's state and by modifying the procedure
+call statement implementation.  The procedure call statement will be
+discussed in the Section~\ref{sec:proc_call}.  All the other problems can
+be solved by maintaining a stack in the state of the process which records
+information regarding the path of the call and the value of the local
+variables in the procedure.  Figure~\ref{fig:wait_procedure} illustrates
+the control transfer from the process to the procedure call and
+\textit{vice versa}.
+
+\begin{figure}[htbp]
+  \centerline{\psfig{figure=figures/wait_proc.ps,height=2in,silent=}}
+  \caption{Wait statement in a procedure}
+  \label{fig:wait_procedure}
+\end{figure}
+
+When a wait statement is executed in a procedure, the \texttt{waitLabel}
+variable in the process's state is set to \texttt{WAITING\_IN\_PROC}.  The
+local variables in the procedure and the location of the wait statement
+are saved in the call stack.  The control is then transferred back to the
+kernel.  In case a procedure body contains a procedure call, the local
+variables and the location of the procedure call are stored in the call
+stack.  These values are required if a wait statement is executed in the
+body of the called procedure.  When a wait in a process statement is
+detected in the final phase of the execution of the wait statement, it
+retrieves the path the process took to the wait statement and the local
+variables of the procedures in the path from the call stack.
+
+\subsection{Procedure Call Statement}
+\label{sec:proc_call}
+
+A VHDL procedure call is implemented in \tyvis\/ as a \Cpp\/ function call.
+However, due to the requirements mentioned in the previous section,
+certain special handling is necessary.  For instance, a procedure may
+return under three conditions:
+
+\begin{enumerate}
+\item On execution of a wait statement, while transferring control back to
+  the kernel.
+\item When checking on the resumption on a wait statement and the wait
+  statement does not resume, control is transferred back to the kernel.
+\item Finally, when the procedure returns normally by executing all the
+  statements in its body.
+\end{enumerate}
+
+Each of these conditions are identified by a unique value returned by the
+\Cpp\/ function.  The return value of the \Cpp\/ function corresponding to the
+procedure call is inspected in a \texttt{switch} statement and actions
+taken appropriately.  For instance, if the procedure call was made
+from the body of a procedure and it returns normally, the local
+variables in the caller has to be restored.  However, they do not have
+to be restored in the other two cases.
+
+The other sequential statement yield easily to implementation in
+\Cpp\/.  The \textit{loop statements} are implemented as a \Cpp\/
+while loop, and the \textit{next} and \textit{exit} statements as
+\Cpp\/ goto statements.  The \textit{assertion statements} as an if
+condition, the \textit{case statements} as a bunch of if statements, a
+\textit{variable assignment} statement as a \Cpp\/ assignment
+statement (using a function call).
+
+
+%%elaboration.tex
+\section{Elaboration}
+\label{chp:elaboration}
+
+A VHDL design can be built by hierarchically decomposing the design into
+components and interconnecting them.  Reusable components can be developed
+and instantiated over and over again.  For instance, by implementing just a
+\texttt{nand} gate and instantiating it and connecting it in different
+configurations, various circuits can be built.  These hierarchical design
+structures help in organization of the design but not in its simulation.
+The process by which these hierarchical structures are flattened out and
+made into a collection of processes is called elaboration of the design
+hierarchy.  During this process, the interconnections between these
+components are propagated to the appropriate processes which are
+responsible for using the signal.  Some information regarding the
+hierarchy, such as the type conversion and resolution functions, is
+necessary during the simulation of the design.  During elaboration, these
+data are collected and maintained by the simulation kernel for use during
+elaboration.
+
+The \LRM\/ defines two kinds of elaboration, \textit{static} and
+\textit{dynamic}.  The elaboration of the design that can be performed
+just before the commencement of the simulation, such as propagation of
+generic constant values and computation of the net list of the signals, is
+called static elaboration.  Certain declarations, such as type
+declarations in subprograms and interface constants in subprograms, can
+not be elaborated completely before simulation.  These constructs have to
+be dynamically elaborated during the execution of the model.  \tyvis\/
+defines a third kind of elaboration, \textit{run-time elaboration}, which
+occurs just before the execution of the model.  Instructions necessary to
+elaborate the design is embedded into the code generated for execution of
+the model.  When this code executed, elaboration of the design is
+performed hierarchically before simulation commences.  The information
+necessary for execution of the model is gathered during elaboration and
+passed on to the simulation kernel.
+
+\subsection{Elaboration of the design hierarchy}
+
+The run-time elaboration scheme in \tyvis\/ combines a top-down and a
+bottom-up approach.  The design hierarchy is elaborated in three phases,
+the \textit{instantiate} phase, the \textit{netinfo} phase, and the
+\textit{connect} phase.  The components and processes in the design are
+instantiated first in a top-down approach in the instantiate phase.  This
+phase is realized in \texttt{\_savant\_entity\_elab::instantiate} and
+implementations of this method that have been over-ridden from
+\texttt{\_savant\_entity\_elab}.
+
+
+The netinfo phase is performed hand in hand with the instantiate phase.  At
+the end of the instantiate phase of every design unit, its netinfo phase is
+initiated with a call to \texttt{createNetInfo}.  When a component
+instantiation statement is elaborated, it fills in the information related
+to the signals it reads and drives.  This information is then passed up the
+hierarchy to the component that instantiated it which fills in the local
+information till the top most design unit is reached.
+
+At this point all the information about all the signals is present in the
+top most design unit.  It then initiates the connect phase of the
+elaboration with calls to \texttt{connect}, where this complete information
+is passed on to the instantiated components and processes which record the
+necessary data.  At the end of the connect phase, the elaboration of the
+model is complete, and simulation can begin.
+
+\subsubsection{Entity declaration}
+
+An entity declaration defines an interface to a component.  This
+interface is implemented as a \Cpp\/ class derived from the
+\verb|_savant_entity_elab|\footnote{The name savant is borrowed from the
+name of the analyzer/code-generator.} class defined in the kernel.
+This predefined class provides methods to create the net list of the
+signals, collect information regarding the drivers of the signals, and
+get the hierarchical information such as the type conversion
+functions.  The generic constants and the signals in the port list of
+the entity become member objects in the entity class.  The signals
+however, are not instantiated as signals, but as a
+\texttt{SignalNetinfo} objects which contains data structures to store
+the net list, and information about the drivers of the signal.
+
+\subsubsection{Architecture declaration}
+
+An architecture body contains the concurrent statements that implement
+the interface specified by the corresponding entity.  Elaboration of
+an architecture involves elaboration of its declarative region and the
+concurrent statements in its body.  The concurrent statements are
+elaborated during the instantiate phase of elaboration.  The
+elaboration of the declarative region is essentially the elaboration
+of the signals declared in the architecture.  The net list and drivers
+of signals are created recursively, each concurrent statement creating
+drivers that it contains.  Only the drivers in the process statements
+are created in the netinfo phase of the elaboration.  The information
+of the signals gathered by the concurrent statements are passed on to
+the higher level from where the corresponding entity was instantiated.
+
+Elaboration of an architecture declaration is implemented as a class
+with data elements corresponding to the signal declarations in the
+declarative region and methods to achieve the three phases.  This
+class is derived from the corresponding entity class, and hence
+inherits the data structures for the signals in the port list of the
+entity.  The default port associations of component instantiations are
+done here, which can be changed by a configuration declaration.  The
+bounded entities of the entity declarations and component declarations
+instantiated in this architecture are identified and assigned during
+the instantiate phase.
+
+%\subsection{Configuration declaration - Incomplete}
+
+\subsection{Elaboration of concurrent statements}
+
+Elaboration of a process statement involves the instantiation of the
+simulation object corresponding to the process statement.  The state
+of the process is also instantiated at this point.  The elaboration of
+the declarations in the process statement takes place when the process
+is initialized by \warped\/ before simulating it.  The drivers for the
+signals driven in this process are added to the signal data structures
+during the elaboration of the architecture containing this
+architecture.
+
+A component instantiation statement is elaborated recursively.  The
+instantiate phase of the elaboration of an architecture declaration
+initiates the instantiate phase of the component instantiation
+statements\footnote{Note that this might instantiate a component or an
+entity directly.} in it.  Any type conversion functions in the
+association list of the component instantiation statement are added to
+the signal data structures to be used during simulation.  The values
+of generic constants are passed to the constructor of the entity being
+instantiated.  If no value is passed, the default values are assigned
+to these by the entity.
+
+\subsubsection{Block statement}
+\label{sec:elab_block}
+
+A block statement creates a hierarchical design by enclosing other
+concurrent statements in its scope.  This hierarchy is different from
+the component instantiation hierarchy in that this is completely
+defined at the time of analysis, where as a component instantiation
+statement has to be elaborated to flatten the entire hierarchy.  A
+block is handled in \tyvis\/ similar to a component, by mapping the
+interface to a class and implementing the methods necessary for
+performing the three phases of elaboration.
+
+\subsubsection{Generate statement}
+\label{sec:elab_generate}
+
+Generate statements allow iterative and conditional instantiation of
+concurrent statements.  The two types of generate statements,
+\textit{generate if} and \textit{generate for} are implemented in \tyvis\/
+as an if statement and a for statement in \Cpp\/ respectively.  A class
+corresponding to the generate statement is created, similar to the class
+for a block statement.  This class contains the iterator and methods
+necessary for elaborating the generate statement.
+
+%%code-generation.tex
+%% $Id: tyvis.tex,v 1.3 2003/07/08 20:37:41 dmartin Exp $
+
+\section{Code generation}
+\label{chp:code_generation}
+
+\subsection{AIRE intermediate format}
+The Advanced Intermediate Representation with Extensibility (AIRE/CE) is a
+specification describing an object oriented representation of VHDL
+\footnote{The AIRE specification includes support for VHDL '87
+\cite{vhdl-lrm-88}, VHDL '93 \cite{vhdl-lrm-93}, and VHDL-AMS, although
+SAVANT supports only VHDL '93.} parse trees
+\cite{willis-96,wilsey-96-viuf}.  The AIRE/CE specification was developed
+jointly by FTL Systems and the University of Cincinnati with contributions
+from many other organizations.  Online documentation for AIRE/CE can be
+found on the web at \url{http://www.ftlsystems.com/aire/}.
+
+AIRE/CE specifies two representations of VHDL: (i) the
+\texttt{I}nternal \texttt{I}ntermediate  \texttt{R}epresentation
+(IIR), an in-memory representation of the parse tree; and (ii) the
+\texttt{F}ile \texttt{I}ntermediate \texttt{R}epresentation (FIR) used
+to store parse trees to files.  This discussion will concentrate on
+the IIR.  At present, we do not use FIR for the file format and
+instead use the machine generated VHDL from \textsc{scram} to build
+library files. 
+
+SAVANT's implementation of the IIR is written in \Cpp, which uses the
+notion of a \texttt{class} in order to encapsulate objects.  Each node
+specified by the IIR has been implemented as a class in the SAVANT
+implementation, and the various functions specified are methods of these
+classes.  The resulting hierarchy is can be used to create an efficient
+representation of a VHDL program.
+
+\begin{figure}
+\centerline{\psfig{figure=figures/node-implementation.ps,height=2.75in,silent=}} 
+\caption{Organization of the IIR\_Declaration node in the SAVANT
+system}\label{node-implementation} 
+\end{figure}
+
+Our implementation of AIRE/CE provides extensibility by using the inheritance
+feature built into \Cpp.  Essentially, each IIR node is composed in the form
+shown in Figure \ref{node-implementation}.
+
+The ``IIR\_Declaration'' node is implemented in three separate classes, each
+inheriting from the last.  Each class definition can be thought of as a
+``layer'' in the class hierarchy.  Each layer in the of a node's
+implementation has a specific and distinct purpose.  The ``IIRBase'' layer
+implements the basic functionality that the AIRE/CE specification describes.
+The ``IIRScram'' layer provides additional functionality required our
+parser, ``scram''.  Examples of the type of methods that this layer
+implements include things like type checking and VHDL re-publishing.  The
+final layer in the figure, ``IIR\_Declaration'', serves as an empty place
+holder containing only constructors and destructors.  When the parser
+instantiates a declaration node from the hierarchy, it allocates an
+``IIR\_Declaration'', and because of the way derivation works in \Cpp, all of
+the layers get constructed.  The interesting ability that this gives the
+implementation is that new layers inserted ``before'' IIR\_Declaration can
+be instantiated by the parser, without modify the parser itself.  See
+Figure \ref{broken-derivation} for an example.
+
+\begin{figure}
+\centerline{\psfig{figure=figures/broken-derivation.ps,height=4in,silent=}}
+\caption{Organization of the IIR\_Declaration node in the SAVANT
+system}\label{broken-derivation} 
+\end{figure}
+
+This figure shows the insertion of a layer ``IIRSavantGeek\_Declaration''
+between the IIRScram and IIR layers.  This new class is derived from
+IIRScram\_Declaration, and the derivation of the empty class
+IIR\_Declaration has been modified to be derived from the new class.  Now,
+when the parser instantiates an IIR\_Declaration this new class will be
+instantiated along with the previously defined classes.  Any data that was
+defined by this class will be instantiated, and any methods defined in it
+can be called as well.
+
+Using this model of extension, whole new back ends can be inserted into the
+AIRE/CE hierarchy, allowing new capabilities to be put into SAVANT, without
+modifying the parser or the semantic analysis routines.
+
+\subsection{\Cpp\/ code generation}
+A detailed description of the TyVIS compliant \Cpp\/ code generation
+routines is provided along with the code generation source code (as
+the code generator is part of the SAVANT project and is not a part of
+TyVIS).
+
+\subsection{Steps involved in simulating a VHDL design}
+VHDLKernel consists of a collection of C++ classes that implements the
+simulation semantics of VHDL. The steps to be followed to simulate a VHDL
+design with savant/tyvis/warped are:
+
+\begin{itemize}
+
+\item 1) SAVANT Parser/Code generator is necessary to generate TyVIS
+      compliant C++. It can be downloaded from
+      \texttt{http://www.ececs.uc.edu/$\sim$paw/savant/}. 
+
+\item 2) Download \textsc{warped}, from
+         \texttt{http://www.ececs.uc.edu/$\sim$paw}.  
+
+\item 3) Refer to the installation notes to install SAVANT. The
+         installation notes are also available at
+         \texttt{http://www.ececs.uc.edu/$\sim$paw/savant/install.html}. 
+
+\item 4) Having installed SAVANT, invoke scram to publish the TyVIS
+         compliant C++ code. The command to code-generate is \textsf{\%scram
+         -publish-cc design\_file.vhd}.
+
+\item 5) The Equivalent C++ will be generated in work.\_savant\_lib/
+         directory.  
+
+\item 6) Set the environment variables TYVISROOT and WARPEDROOT to
+         appropriate directories. \emph{i.e.} if you have downloaded TyVIS
+         in directory /home/userName/tools~\footnote{This directory will
+         be written to (.o files will be written into this directory when
+         the Makefile is invoked), so make sure that this directory is not
+         any system directory which usually is only readable.} then
+         TYVISROOT is set to /home/userName/tools/tyvis. Tyvis doesn't
+         need any installation other than downloading them and setting the
+         appropriate environment variables. See the README and INSTALL
+         section of \textsc{warped} for setting up the environment
+         variables.
+
+\item 7) Run "make" command in work.\_savant\_lib/ directory
+
+\item 8) An executable starting with SEA\_ will be created in the working 
+         directory.
+
+\end{itemize}
+
+\section*{Acknowledgements}
+
+This research has been conducted with the participation of many
+investigators.  While not a complete list, the following individuals
+have made notable direct and/or indirect contributions to this effort
+(in alphabetical order): Perry Alexander, Harold Carter, Wan Li Cheng,
+John Hines, Balakrishnan Kannikeswaran, Venkatram Krishnaswamy, Lantz
+Moore, Krishnan Subramani, Vijay Balakrishnan , Malolan Chetlur,
+Radharamanan Radhakrishnan, Raghunandan Rajan, Dhanajai Madhava Rao,
+Swaminathan Subramanian and Christopher Young.  We wish to express our
+sincerest gratitude for the time that you spent reviewing and commenting
+on our designs. 
+
+This research was supported in part by the Advanced Research Projects
+Agency, monitored by the Department of Justice under contract number
+J--FBI--93--116.  In addition, we benefited greatly from the technical
+support and guidance by the ARPA and DOJ program managers, notably: Bob
+Parker, John Hoyt, and Lt. Col. John Toole.  Without this support and
+interaction, the work documented in this report would not have been
+possible.  Thank you.
+
+%\bibliographystyle{acm}
+%\bibliography{hdls,sim}
+\begin{thebibliography}{1}
+
+\bibitem{vhdl-lrm-88}
+{\em {IEEE} Standard {VHDL} Language Reference Manual}.
+\newblock New York, NY, 1988.
+
+\bibitem{vhdl-lrm-93}
+{\em {IEEE} Standard {VHDL} Language Reference Manual}.
+\newblock New York, NY, 1993.
+
+\bibitem{willis-96}
+{\sc Willis, J.~C., Wilsey, P.~A., Peterson, G.~D., Hines, J., Zamfriescu, A.,
+  Martin, D.~E., and Newshutz, R.~N.}
+\newblock Advanced intermediate representation with extensibility ({AIRE}).
+\newblock In {\em {VHDL} Users' Group Fall 1996 Conference\/} (Oct. 1996),
+  pp.~33--40.
+
+\bibitem{wilsey-96-viuf}
+{\sc Wilsey, P.~A., Martin, D.~E., and Chawla, P.}
+\newblock {SAVANT}: An extensible object-oriented intermediate for {VHDL}.
+\newblock In {\em {VHDL} Users' Group Spring 1996 Conference\/} (Mar. 1996),
+  pp.~275--281.
+
+\end{thebibliography}
+
+
+\end{document}

@@ -1,0 +1,8 @@
+(a) Files in architectures
+
+(b) Array types defined in the declarative region of suprograms, whose limits 
+    are based on constants passed as subprogram parameters.
+
+(c) Shared variables
+
+(d) Generics/Ports at the top level design entit

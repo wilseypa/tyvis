@@ -1,0 +1,861 @@
+#!/local/packages/gnu/bin/perl 
+
+# ############################################################################
+# Perl Translation program 
+# Converts ISCAS benchmarks vhdl source to TYVIS compliant C++ code
+# written by : Radhakrishnan Radharamanan
+# Date       : Jan 1996
+# Filename   : convert   
+
+# Note : THIS PERL UTILITY IS OUTDATED. IT NO LONGER GENERATES TYVIS COMPLIANT
+# C++ CODE (well, it used to, anyway). The only reason it is here is that
+# it could serve as a template for other vhdl kernels.
+
+# Input Specification : convert iscas85_x.vhdl
+
+# Associative lists :
+
+# [a] table1 : contains the righthand side signal names of port maps
+# [b] table2 : contains the lefthand side signal names of port maps
+# [c] gateNumber : tells which gate this input/output belongs to
+# [d] inputNumber : tells the number of inputs this gate has
+# [e] gateName : holds the name of each gate
+# [f] genericName : holds what type of gate this is
+# [g] sigNum : holds second set of signal numbers
+# [h] actualTable : holds the outermost signals(eg I1, I2, 01)
+# [i] globalTable : holds all the signals with their ids
+# [j] symtab : holds names of generated bit signals i.e INP(0),INP(1)..
+# [k] tempTable : holds names of bit vectors
+# [l] gateNameTable : name of each gate
+# [m] BitVectorTable : name of each signal in Tims order
+# [n] interTable : stores bit vector ids
+# [o] outerSig : contains list of outer signals
+# [p] innerSig : contains list of inner signals
+# [q] intermediate : contains list of intermediate signals
+# Tims order  : I1 (entire vector) - 0
+#               O1 (entire vector) - 1
+#               I2 (entire vector) - 2
+#               INP (entire vector)- 3 
+#               OUTP(entire vector)- 4
+#               H   (entire vector)- 5
+#               INTERP (entire vector) - 6
+#               OUTPI (entire vector) - 7
+#               I1 (bits) - 8
+#               O1 (bits) - 9
+#               I2 (bits) - 10
+#               INP (bits) - 11...
+#               OUTP(bits) 
+#               INTERP(bits)
+#               OUTPI(bits)
+#
+# Note: Bit Vecor ids are stored in BitVectorTable whereas individual bits are 
+#       stored in actualTable and globalTable.
+
+# ############################################################################
+
+# keywords table
+
+%signals = ("port"," port ", "in", " in ", "out", " out ", 
+	    "signal", "signal ", "generic", " generic ",
+            "ARCHITECTURE", "ARCHITECTURE", "BUFFER_OUT", " BUFFER_OUT "); 
+
+
+$pattern = ";";			# port map declaration terminator
+$assignPattern1 = " => ";	# 
+
+open(DBG,">debug") || die "File Creation Error" ; 
+#open file for debug - optional
+
+while(<>){ # for reading in more than one file
+    
+    $a = $ARGV;			# transfering filename
+    if($a eq "-"){		# 
+	print "\tFile Creation Error\n\tFormat :- convert filename.vhdl\n\n";
+	exit 0 ;
+    }
+    print "Do you want debug output ? [y/n]\n";
+    chop($ans = <STDIN>);
+    print "Output file name : ";
+    chop($b = <STDIN>);		# 
+				# 
+    open(IN, $a) || die "File Creation Error";
+    open(OUT, ">$b") || die "File Creation Error";
+    $flag = 0 ;			# 
+    while(<IN>){		# 
+	foreach $key (keys %signals){ # going thorough the list 
+	    $search = $signals{$key}; # 
+	    $flag = 1 if m/$search/ ; # 
+	    $flag = 0 if m/is/;	# 
+	}			# 
+	print OUT $_ if $flag eq 1 ; # write out to file
+	
+
+# ------this part is for trapping port declarations------------------   
+	
+	$newsearch = " port map" ;
+	
+	$sflag = 1 if m/$newsearch/ ;
+	if($sflag eq 1){	# 
+	    $sflag = 0 if m/$pattern/; 
+	    
+				#prints to debug file - optional
+	    #    print DBG "flag : $sflag --> $search in line : $_ " ;
+	    
+	    next if $sflag eq 1 ;
+        }			# 
+	$flag = 0 ; # reset flag for main while loop
+    }				# 
+    close(IN);  #closing input file
+    close(OUT); #closing output file
+
+# ************** outfile file has been created **********************     
+
+    # not finished yet - got to segregate the signals 
+    # lets find formal and actual signals first
+
+    # open output file for reading opening output file 'parameters'    
+    open(IN, "$b") || die "File Creation Error"; 
+
+
+    $i = 0 ;			#initializations
+    $gate = 0 ;
+    $inputs = 0 ;
+    $numberOfGates = $bufferCount = $buf = 0;
+    $gen = $interIdx = $finalIdx = 0;
+    open(TABLE, ">tables");
+
+    while(<IN>){
+	# here is where we take care of BUFFER_OUT object 
+	if(m/BUFFER/) { 
+	    while($buf < $bufferCount){
+		$i = $i + 1;
+		$table1{$i} = "OUTPI($buf)";
+                $buf = $buf + 1 ;
+                $table2{$i} = "in$buf";
+		$gateNumber{$i} = $gate ;
+		$inputNumber{$gate} = $bufferCount;
+		if($ans eq "y"){
+                print TABLE "$i\t$table1{$i}\t\t$table2{$i}\t\t$gateNumber{$i}\n";
+	    }
+	    }
+	    $gate = $gate + 1 ;
+	}
+
+	$assignFlag = 1 if s/$assignPattern1/"      "/ ;
+      	if($assignFlag eq 1){	# 
+
+	    s/\)\)/\)/g;	# string manipulation
+	    s/\)//g if !(m/\(/); # removal of [)) , ; )]
+	    s/;//g;		# 
+	    s/,//g;		# 
+
+	    $oneLine = $_ ;	# 
+	    $goodLine = substr($oneLine,6,100);
+
+	    ($param1, $param2, $param3) = split(/\"/,$goodLine);
+            #"
+	    #creating 2 associative lists - one for 
+	    #gate signals and one for outer gate signals
+
+	    chop($param3);
+	    $i = ($i + 1) ;      
+	    $table1{$i} = $param3 ;
+	    $gateNumber{$i} = $gate ;
+	    if($param1 =~ m/out/){
+		$gate = $gate + 1 ;
+		$numberOfGates = $numberOfGates + 1 ;
+		$inputNumber{$gate} = $inputs ;
+                $bufferCount = $bufferCount + 1 if($param3 =~ m/OUTPI/);
+		#print "($param3 - $gateNumber{$i} - $inputNumber{$gate})\n";  
+		$inputs = 0 ;
+	    }
+	    $inputs = $inputs + 1 if ($param1 =~ m/in/);
+	    $table2{$i} = $param1 ;
+	    if($ans eq "y"){
+       	    print TABLE "$i\t$table1{$i}\t\t$table2{$i}\t\t$gateNumber{$i} \n";
+	}			
+	}			
+	$z = $i ; #this variable contains the last value of i 
+	# print " z = $z\n";
+	$assignFlag = 0 ;	# 
+				# 
+	if(m/ARCHITECTURE/){
+	    ($junk, $archName) = split(/ OF /,$_);
+	    $archName =~ s/ IS//g;
+	    chop($archName);
+	    # print "$junk --- $archName\n";
+        }			# 
+	
+	if(m/generic/){
+	    $gen = $gen + 1 ; #list counter or key 
+	    ($gateName, $junk) = split(/ : /,$_);
+	    ($genericName, $junk) = split(/ generic /,$junk);
+	    # print "$gateName --- $genericName\n";
+	    $gateName =~ s/  //g;
+	    $gateNameTable{$gen} = $gateName ;
+	    $genericNameTable{$gen} = $genericName ;
+ 
+	}
+	
+    }
+    close(TABLE);				# 
+    
+    print "Testbench file name : ";
+    chop($c = <STDIN>);		# 
+    
+    open(TB, "$c") || die "File Creation Error"; 
+    $f = $c.out;		# 
+    open(TBO,">$f") || die "File Creation Error"; 
+    
+    $index = $arrIdx = 0 ; 
+    while(<TB>){		# 
+	foreach $key (keys %signals){ # going thorough the list 
+	    $search = $signals{$key};
+	    $tbflag = 1 if m/$search/ ;
+	    $tbflag = 0 if m/is/; # 
+	}			# 
+	
+       	print TBO $_ if $tbflag eq 1 ; # write out to file
+	
+        $tbflag = 0 ;
+	
+        if (m/port\(/|| m/\: in/ || m/\: out/ || m/\: inout/){
+            s/port\(//g;
+            chop ;
+            ($decl1, $decl2) = split(/;/, $_) ;
+
+            $vectorflag1 = 1 if ($decl1 =~ m/bit\_vector\(/);
+            $vectorflag2 = 1 if ($decl2 =~ m/bit\_vector\(/);
+            $bitflag1 = 1 if ($decl1 =~ m/bit/ );
+            $bitflag2 = 1 if ($decl2 =~ m/bit/);
+
+# ------------ trapping the bit and bit vector fields ----------------
+	    
+	    if($vectorflag1 eq 1){
+		($junk, $limits) = split(/\(/,$decl1);
+		chop($limits);
+		($lower, $upper) = split(/ to /,$limits);
+		($symbol,$junk) = split(/ : /,$junk);
+		($junk,$symbol) = split(/\b\b\b\b\b/,$symbol);
+		
+		#creating the outer signals associative list
+		# INP, OUTP and H
+
+		$i = $lower ;
+                $outerSig[$arrIdx] = $symbol ;
+                $arrIdx = $arrIdx + 1 ;
+		while($i <= $upper){
+		    $temp = $symbol ;
+		    $symbol = "$symbol($i)";
+		    $i = $i + 1 ;
+		    $index = $index + 1 ;
+		    $symtab{$index} = $symbol ;
+		    $symbol = $temp ;
+		    #print "$i--$lower--$upper--$symtab{$index}\n";
+
+		}
+	    }
+	    if($vectorflag2 eq 1){
+		($junk, $limits) = split(/\(/,$decl2);
+		chop($limits);
+		($lower, $upper) = split(/ to /,$limits);
+		($symbol,$junk) = split(/ : /,$junk);
+		($junk,$symbol) = split(/\b\b/,$symbol);
+		
+		$i = $lower ;
+                $outerSig[$arrIdx] = $symbol ;
+                $arrIdx = $arrIdx + 1 ;
+		while($i <= $upper){
+		    #print "$symbol($i)\n";
+		    $temp = $symbol ;
+		    $symbol = "$symbol($i)";
+		    $i = $i + 1 ;
+		    $index = $index + 1 ;
+		    $symtab{$index} = $symbol ;
+		    $symbol = $temp ;
+		}
+	    }
+	    if($vectorflag1 eq 0 && $vectorflag2 eq 0 && $bitflag1 eq 1){
+		($symbol,$junk) = split(/ : /,$decl1);
+		($junk,$symbol) = split(/\b\b\b\b\b\b/,$symbol);
+		#print "symbol = $symbol\n" ;
+		$index = $index + 1 ;
+                $outerSig[$arrIdx] = $symbol ;
+                $arrIdx = $arrIdx + 1 ;
+		$symtab{$index} = $symbol ;
+	    }
+	    
+	    if($vectorflag1 eq 0 && $vectorflag2 eq 0 && $bitflag2 eq 1){
+		($symbol,$junk) = split(/ : /,$decl2);
+		($junk,$symbol) = split(/\b\b\b\b\b\b/,$symbol);
+		#print "symbol = $symbol\n" ;
+		$index = $index + 1 ;
+                $outerSig[$arrIdx] = $symbol ;
+                $arrIdx = $arrIdx + 1 ;
+		$symtab{$index} = $symbol ;
+	    }
+	    $vectorflag1 = $vectorflag2 = $bitflag1 = $bitflag2 = 0 ; 
+	    
+# ------------ trapping the bit and bit vector fields ----------------  
+	    
+	}
+	
+    }
+    #foreach $key (sort by_number keys(%symtab)){
+    # print "$key ---> $symtab{$key}\n " ;
+	#$name = $symtab{$key};
+	#foreach $elem (keys(%table1)){
+	    #if($table1{$elem} eq $name){
+       	# print "$name linked with $table2{$elem} (gate $gateNumber{$elem})\n";
+	   # }
+	#}
+    #}
+    close(IN); #closing both files
+    close(TB);
+    close(TBO);
+    
+    # opening TEBO file for reading - need to trap outermost signals
+
+    $d = $c.out ;		# name of out file
+    open(TEBO,"$d");		# TEBO - temporary output of testbench file
+    $idx = 0;			# initialization of local variables
+    $x = 0 ;
+    $idCount = 0;
+    $nameIdx = 8;# keeps track of no. of names for assigning ids
+    $arrIdx = 0;	
+    while(<TEBO>){
+	
+	#creating the outer signals associative list
+	# INP, OUTP and H
+
+	if (m/ in / || m/ out /){
+	    s/port\(//g;
+	    ($first, $second) = split(/; /,$_);
+	    
+	    ($Name, $range) = split(/ : /,$first);
+	    
+	    if($range =~ m/bit_vector/){
+		$range =~ s/in bit_vector\(//g;
+		chop($range);
+		
+	 	# print "----> $range\n";
+		($lower, $upper) = split(/ to /,$range);
+		#print "$Name - $upper -- $lower\n";
+		$i = 0;
+		while($i <= $upper){
+		    $x = $x + 1 ;
+		    $VecName = substr($Name,3,100);
+		    $tempTable{$x} = "$VecName($i)";
+		    $tempId{$x} = $idCount;
+         
+		    #  print "$tempTable{$x}\n";
+		    $i = $i + 1 ;
+		}
+		$idCount = $idCount + 1 ;
+	    }
+	    
+	    if($range =~ m/bit\)/){
+		$x = $x + 1 ;
+		
+		$bitName = substr($Name,8,100);
+		$tempTable{$x} = "$bitName";
+		$tempId{$x} = $idCount;
+		$idCount = $idCount + 1 ;
+		#  print "$tempTable{$x}\n"; 
+	    }
+	    
+	    ($Name, $range) = split(/ : /,$second);
+	    
+	    if($range =~ m/bit_vector/){
+		$range =~ s/out bit_vector\(//g;
+		chop($range);
+		chop($range);
+		chop($range);
+		
+		# print "----> $range\n";
+		($lower, $upper) = split(/ to /,$range);
+		#print "$Name - $upper -- $lower\n";
+		$i = 0;
+		while($i <= $upper){
+		    $x = $x + 1 ;
+		    $tempTable{$x} = "$Name($i)";
+		    # print "$tempTable{$x}\n";
+		    $i = $i + 1 ;
+		    $tempId{$x} = $idCount;
+		}
+		$idCount = $idCount + 1 ;
+	    }
+	    
+	}
+	# here is where INP, OUTP get stored
+	if (m/signal/){
+	    s/signal //g;
+	    ($Name, $range) = split(/ : /,$_);
+	    #print "$Name   --   $range";
+
+	    if($range =~ m/bit_vector/){
+		$range =~ s/bit_vector\(//g;
+		chop($range);
+		chop($range);
+		chop($range);
+		# print "----> $range\n";
+		($lower, $upper) = split(/ to /,$range);
+		#print "$Name - $upper to $lower\n";
+		$i = 0;
+                $innerSig[$arrIdx] = $Name ;
+                $arrIdx = $arrIdx + 1 ;
+		while($i <= $upper){
+		    $idx = $idx + 1 ;
+		    $actualTable{$idx} = "$Name($i)";
+		    $i = $i + 1 ;
+		    $globalTable{$idx} = $nameIdx;
+                #   $nameIdx = $nameIdx + 1 ;
+		#   print "$idx  $actualTable{$idx} $globalTable{$idx}\n";
+		}		# end of while loop
+		    $nameIdx = $nameIdx + 1 ;
+
+	    }			# end of bitvector check
+	    if($range =~ m/bit;/){
+		$i = 0;
+		$idx = $idx + 1 ;
+                $innerSig[$arrIdx] = $Name ;
+                $arrIdx = $arrIdx + 1 ;
+		$actualTable{$idx} = "$Name";
+		$globalTable{$idx} = $nameIdx;
+		$nameIdx = $nameIdx + 1 ; 
+		# print "$actualTable{$idx}\n";
+	    }			# end if bit check
+	}			# end of signal check
+    }				# 
+    close(TEBO);
+    $i = 0 ;
+    $inner = $idx ; # holds the starting index of the next level of signals
+    #print "inner = $inner \n";
+    foreach $key (sort by_number keys(%tempTable)){
+	$idx = $idx + 1 ;
+	$i = $i + 1 ;
+	$actualTable{$idx} = $tempTable{$key};
+	$globalTable{$idx} =  $nameIdx  ; #$tempId{$key} + $nameIdx;
+	$nameIdx = $nameIdx + 1 ;
+	#print "$key $idx $actualTable{$idx} $globalTable{$idx}  $nameIdx \n";
+    }
+    #$nameIdx = $globalTable{$idx};
+    
+# merging actualTable, table1 and table2 into one - globalTable 
+    
+    $lastvalue = -1;
+    $index = 0;
+    $arrIdx = 0 ;
+    $flag1 = $flag2 = 0 ;
+    foreach $key (sort by_number keys(%table1)){
+	if($table1{$key} =~ m/INTERP/){
+	    if($table1{$key} =~ m/\(/){
+		$junk = $table1{$key};
+		$junk =~ s/INTERP//g;
+		$junk =~ s/\(//g;
+		$junk =~ s/\)//g;
+		$temp = $junk;
+
+		#  print "$table1{$key}  -->  $temp\n ";
+		if ($temp > $lastvalue) {
+		    if($flag1 eq 0){
+			$intermediate[$arrIdx] = "INTERP";
+			$arrIdx = $arrIdx + 1;
+			$flag1 = 1 ;
+		    }		
+		    $interSig{$temp} = "INTERP($temp)" ;
+		    #  print "$key ---- $interSig{$temp}\n";
+		    $index = $key ;
+		    $idx = $idx + 1 ;
+		    $actualTable{$idx} = $interSig{$temp};
+		    
+		    $globalTable{$idx} = $nameIdx;
+		    $nameIdx = $nameIdx + 1 ;
+		    $lastvalue = $temp; 
+		}
+	    } else {
+		$junk = $table1{$key};
+		$junk =~ s/INTERP//g;
+		$junk =~ s/\(//g;
+		$junk =~ s/\)//g;
+		$temp = $junk;
+                if($flag1 eq 0){
+                    $intermediate[$arrIdx] = "INTERP";
+                    $arrIdx = $arrIdx + 1;
+                    $flag1 = 1 ;
+		}
+		#  print "$table1{$key}  -->  $temp\n ";
+		if ($temp > $lastvalue) {
+		    $interSig{$temp} = "INTERP$temp" ;
+		    #  print "$key ---- $interSig{$temp}\n";
+		    $index = $key ;
+		    $idx = $idx + 1 ;
+		    $actualTable{$idx} = $interSig{$temp};
+		    $globalTable{$idx} = $nameIdx;
+		    $nameIdx = $nameIdx + 1 ;
+		    $lastvalue = $temp; 
+		}
+	    }
+	}
+    }
+    $lastvalue = -1;
+    foreach $key (sort by_number keys(%table1)){
+	if($table1{$key} =~ m/OUTPI/){
+	    $junk = $table1{$key};
+	    $junk =~ s/OUTPI\(//g;
+	    $junk =~ s/\)//g;
+	    
+	    $index = $index + 1;
+	    if($flag2 eq 0){
+		$intermediate[$arrIdx] = "OUTPI";
+		$arrIdx = $arrIdx + 1;
+		$flag2 = 1 ;
+	    }
+	    $newtemp = $junk;
+	    if ($newtemp > $lastvalue) {
+		$interSig{$index} = "OUTPI($junk)";
+		$idx = $idx + 1 ;
+		$actualTable{$idx} = $interSig{$index};
+		
+		$globalTable{$idx} = $nameIdx;
+		$nameIdx = $nameIdx + 1 ;
+		$lastvalue = $newtemp; 
+	    }
+	}
+    }
+    open(STATS,">stats") || die "File Creation Error";
+    $start = $idx ; # stores the starting index of innermost signals
+    #print "start = $start\n";
+    $indx2 = $start + 1;
+    foreach $elem (sort by_number keys(%inputNumber)){
+	$indx = $inputNumber{$elem}+1 ;
+	$i = 0;
+	while($i < $indx){
+	    $globalTable{$indx2} = $nameIdx; #$inputNumber{$elem};
+	    $nameIdx = $nameIdx + 1 ; 
+# print "$indx  $inputNumber{$elem} $indx2  $globalTable{$indx2}\n";
+	    $indx2 = $indx2 + 1;
+	    $i = $i + 1 ;
+	} 
+    }
+    # prints out the gate input/output name
+    foreach $key (sort by_number keys(%table2)){
+	$idx = $idx + 1 ;
+	$actualTable{$idx} = "$table2{$key}";
+	
+    }  
+ # **********************************************************************
+ # ---------- this part takes care of BitVector ids ---------------------
+ # **********************************************************************
+
+    $arrIdx = 0 ;
+    foreach $i (0 .. $#innerSig){
+	#print "$innerSig[$i]\n";
+        $BitVectorTable{$arrIdx} = $innerSig[$i];
+        $arrIdx = $arrIdx + 1 ;
+    }
+    foreach $i (0 .. $#outerSig){
+	#print "$outerSig[$i]\n";
+        $BitVectorTable{$arrIdx} = $outerSig[$i];
+        $arrIdx = $arrIdx + 1 ;
+    }
+    foreach $i (0 .. $#intermediate){
+	#print "$intermediate[$i]\n";
+        $BitVectorTable{$arrIdx} = $intermediate[$i];
+        $arrIdx = $arrIdx + 1 ;
+    }
+ #    foreach $key (sort by_number keys(%BitVectorTable)){
+ #      print "$key---$BitVectorTable{$key}\n";
+ #  }
+
+    # 
+    # **************** actualTable available here *****************
+    # **************** prints the whole actualTable ***************
+    #
+    if($ans eq "y"){ 
+	foreach $key (sort by_number keys(%BitVectorTable)){
+	    print STATS "$key---$BitVectorTable{$key}---$key\n";
+	}
+	foreach $key (sort by_number keys(%actualTable)){
+	    print STATS "$key---$actualTable{$key}---$globalTable{$key}\n";
+	    # print STATS "\n" if($key % 3 eq 0); 
+	}
+    }
+    close(STATS);
+
+     
+ # **********************************************************************
+ # ---------- this part takes care of writing out the main.cc -----------
+ # **********************************************************************
+
+ # initial stuff to include in every main
+ 
+ #  system("clear");
+    open(FANOUT, ">fanout");
+    print "Please wait --> writing main.cc \n";
+    
+    open(OUT,">main.cc") || die "File Creation Error";
+    
+    print OUT "#include <iostream.h>\n#include \"warped.hh\"\n";
+    
+    print OUT "#include \"LogicalProcess.hh\"\n\n";
+    
+    print OUT "\n#include \"P.hh\"\n#include \"PRINTOUT.hh\"\n";
+
+    print OUT "#include \"BUFFER_OUT.hh\"\n\n";
+    
+    if($a =~ "iscas85_1.vhdl"){
+	print OUT "#include \"NANDG.hh\"\n\n";
+    }
+    elsif($a =~ "iscas85_2.vhdl"){
+        print OUT "#include \"NANDG.hh\"\n";
+        print OUT "#include \"INVG.hh\"\n";
+	print OUT "#include \"NORG.hh\"\n";
+	print OUT "#include \"ANDG_9.hh\"\n";
+	print OUT "#include \"XORG.hh\"\n";
+	print OUT "#include \"NANDG_4.hh\"\n";
+	print OUT "#include \"ANDG_8.hh\"\n";
+	print OUT "#include \"NANDG_3.hh\"\n\n";
+    }
+    else { print "Please specify include files for gates in main.cc\n";
+       }
+
+    print OUT "main(int argc, char *argv[]) {\n";
+
+    $numgates = $numberOfGates + 3 ;
+
+    print OUT "LogicalProcess lp($numgates, $numgates, 1 );\n\n";
+
+    print OUT "P *p = new P;\n";
+
+    print OUT "lp.registerObject(p);\n\n";
+
+    print OUT "PRINTOUT *printout = new PRINTOUT;\nlp.registerObject(printout);\n\n";
+
+    print OUT "BUFFER_OUT *buffer_out = new BUFFER_OUT;\nlp.registerObject(buffer_out);\n\n";
+
+    $gateid = $tempSig = $tempSig1 = $tempSig2 = $tempSig3 = 0;
+    $lineCount = $signalId = $start + 1 ;
+    foreach $key (sort by_number keys(%gateNameTable)){
+
+	print OUT "$genericNameTable{$key} *\L$gateNameTable{$key}\E = new $genericNameTable{$key};\n";
+	$gateid = $key + 1 ;
+
+	print OUT "\L$gateNameTable{$key}->id = $gateid;\n";
+	print OUT "\L$gateNameTable{$key}->name = ";
+	print OUT "\"$archName.$gateNameTable{$key}\";\n";
+	
+	$i = $sigId = 0;
+	$j = 0;
+
+        # printing out the sensitivity list 
+	#$signalId = $start;
+	$sigId = $lineCount;
+	while ($i < $inputNumber{$key}){
+	    print OUT "\L$gateNameTable{$key}->state.current->wait[0]";
+	    print OUT ".sensList[$i] = $globalTable{$sigId};\n"; 
+	    $sigId = $sigId + 1 ;
+	    $i = $i + 1 ;
+	}
+ 
+	# printing out the IN1, IN2 ... inputs 
+	$sigId = $lineCount;
+	while ($j < $inputNumber{$key}){
+	    print OUT "\L$gateNameTable{$key}->state.current->";
+	    print OUT "\U$actualTable{$sigId}\E.id = $globalTable{$sigId}; \n";
+	    $sigId = $sigId + 1;
+	    $j = $j + 1 ;
+	}
+
+	# printing out the OUT1 ... outputs 
+	print OUT "\L$gateNameTable{$key}->state.current->";
+	print OUT "\U$actualTable{$sigId}\E.id = $globalTable{$sigId}; \n";
+	$searchSig = $table1{$sigId - $start };
+	#print "$searchSig\n";
+
+	foreach $skey (sort by_number keys(%actualTable)){
+	    if($searchSig eq $actualTable{$skey}){
+		$found = $skey;
+		#print "found key = $found\n";
+	    }
+	}
+
+	print OUT "\L$gateNameTable{$key}->state.current->";
+	print OUT "\U$actualTable{$sigId}\E.upAssoc.sig = $globalTable{$found}; \n";
+	
+	print OUT "\L$gateNameTable{$key}->state.current->";
+	print OUT "\U$actualTable{$sigId}\E.upAssoc.src = 0; \n";
+
+	# ****************************************************
+	# ------------- ACTUAL SIGNALS part ------------------
+	# ****************************************************
+
+        # ************** First input signals *****************
+
+        $j = 0;
+        $signalId = $lineCount;
+
+	while ($j < $inputNumber{$key}){
+	    $searchSig = $table1{$signalId - $start };
+	    $j = $j + 1;    
+	    foreach $skey (sort by_number keys(%actualTable)){
+		if($searchSig eq $actualTable{$skey}){
+		    $found = $skey;
+		    #print "found key = $found\n";
+		}
+	    }
+
+	    print OUT "\L$gateNameTable{$key}->state.current->";
+	    print OUT "\U$actualTable{$signalId}\_ACTUAL\E.id = $globalTable{$found}; \n";
+
+# ***************** bound.left & bound.right ***************************
+            
+            $value = $table1{$signalId - $start};
+            if(($value =~ m/INP\(/) || ($value =~ m/INTERP\(/)){
+		#print "value = $value\n";
+		($junk, $bitvalue) = split(/\(/,$value);
+		chop($bitvalue);
+	    }
+            elsif($value =~ m/INTERP/){
+		$value =~ s/INTERP//g;
+                $bitvalue = $value;
+	    }
+            elsif($value =~ m/OUTPI\(/) {
+                ($junk, $bitvalue) = split(/\(/,$value);
+		chop($bitvalue);
+	    }
+	    else{
+		print "Something wrong during bound calculation\n";
+		print "value = $value";
+	    }
+            print OUT "\L$gateNameTable{$key}->state.current->";
+            print OUT "\U$actualTable{$signalId}\_ACTUAL\E.bound.left = $bitvalue; \n";
+            print OUT "\L$gateNameTable{$key}->state.current->";
+            print OUT "\U$actualTable{$signalId}\_ACTUAL\E.bound.right = $bitvalue; \n";
+
+# ****************** downward association **************************
+
+            print OUT "\L$gateNameTable{$key}->state.current->";
+            print OUT "\U$actualTable{$signalId}\_ACTUAL\E.downAssoc = $globalTable{$signalId}; \n";
+
+	    $signalId = $signalId + 1;
+	}
+
+        # ************** Secondly output signals **************
+        $searchSig = $table1{$signalId - $start };
+	#print "searching for $searchSig , $signalId, $start\n";
+	$j = $j + 1;    
+	foreach $skey (sort by_number keys(%actualTable)){
+	    if($searchSig eq $actualTable{$skey}){
+		$found = $skey;
+		#print "found key = $found\n";
+	    }
+	}
+
+        print OUT "\L$gateNameTable{$key}->state.current->";
+	print OUT "\U$actualTable{$signalId}\_ACTUAL\E.id = $globalTable{$found}; \n";
+        $savedId = $globalTable{$found}; # *** useful for fanDest[].sigId ***
+        if($actualTable{$found} =~ m/OUTPI/) {$savedId = $globalTable{1} - 1 ;}
+        $value = $table1{$signalId - $start};
+	if(($value =~ m/INP\(/) || ($value =~ m/INTERP\(/)){
+	    #print "value = $value\n";
+	    ($junk, $bitvalue) = split(/\(/,$value);
+	    chop($bitvalue);
+	}
+	elsif($value =~ m/INTERP/){
+	    $value =~ s/INTERP//g;
+	    $bitvalue = $value;
+	}
+	elsif ($value =~ m/OUTPI\(/){
+	    ($junk, $bitvalue) = split(/\(/,$value);
+	    chop($bitvalue);
+	}
+	else{
+	    print "Something wrong during bound calculation\n";
+            print "value = $value";
+	}
+
+	print OUT "\L$gateNameTable{$key}->state.current->";
+	print OUT "\U$actualTable{$signalId}\_ACTUAL\E.bound.left = $bitvalue; \n";
+	print OUT "\L$gateNameTable{$key}->state.current->";
+	print OUT "\U$actualTable{$signalId}\_ACTUAL\E.bound.right = $bitvalue; \n";
+
+	# ************** end of shit calculations *************
+
+# ******* ok, time to calculate fanout and fanout destinations ************
+        $count = 0 ;
+        foreach $elem (sort by_number keys(%table1)){
+	    if ($table1{$elem} eq $table1{$signalId - $start}){
+		$flag = $elem ;
+		$count = $count + 1 ;
+	    }
+	}
+        $count = $count - 1 ;
+        $count = $count + 1 if $count eq 0 ;
+
+        print OUT "\L$gateNameTable{$key}->state.current->";
+        print OUT "\U$actualTable{$signalId}\_ACTUAL\E.fanout = $count; \n";
+        $i = 0;
+        $count = 0;
+
+	foreach $elem (sort by_number keys(%table1)){
+	    if ($table1{$elem} eq $table1{$signalId - $start}){
+		$flag = $elem ;
+		$count = $count + 1 ;
+		if((($count - 1) >= 1) || (($signalId - $start) eq $#table1)){
+		    print OUT "\L$gateNameTable{$key}->state.current->";
+                    print FANOUT "\L$gateNameTable{$key}->state.current->";
+                    $elem = $gateNumber{$elem} + 2;
+                    print OUT "\U$actualTable{$signalId}\_ACTUAL\E.fanDest[$i].objid = $elem;\n";
+		    print FANOUT "\U$actualTable{$signalId}\_ACTUAL\E.fanDest[$i].objid = $elem;\n";
+                    print OUT "\L$gateNameTable{$key}->state.current->";
+                    print OUT "\U$actualTable{$signalId}\_ACTUAL\E.fanDest[$i].sigid = $savedId;\n";
+		    print FANOUT "\L$gateNameTable{$key}->state.current->";
+                    print FANOUT "\U$actualTable{$signalId}\_ACTUAL\E.fanDest[$i].sigid = $savedId;\n";
+		    $i = $i + 1;
+		}
+	    }
+	}
+
+	$signalId = $signalId + 1;
+	print OUT "lp.registerObject(\L$gateNameTable{$key});\n";
+	print OUT "\n";
+        print FANOUT "\n";
+        $lineCount = $signalId ;
+    }
+
+    print OUT "lp.allRegistered();\n\n";
+    print OUT "if(argc==2){ \n";
+    print OUT "  lp.simulate(atoi(argv[1]));\n";
+    print OUT "}\n else {\n    lp.simulate();\n}\n";
+
+    #**** printing out the delete statements ***********
+
+    print OUT "delete p;\n";
+    print OUT "delete printout;\n";
+    print OUT "delete buffer_out;\n";
+    foreach $key (sort by_number keys(%gateNameTable)){
+    print OUT "delete \L$gateNameTable{$key}\E;\n";
+}    
+    print OUT "}\n";
+    close(OUT);
+    close(DBG);			# closing debug file
+
+    exit 0 if(@ARGV eq 0);	# exit if only one file was
+				# entered at command line
+    
+}				# end of main loop
+				
+
+#********** subroutine which sorts keys in ascending order ***************
+
+sub by_number {			# sorting subroutine
+    
+    if ($a < $b){ -1; }
+    elsif ($a == $b) { 0; }
+    elsif ($a > $b){ 1; }	 
+}				# end of subroutine
+				
+
+
+

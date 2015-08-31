@@ -1,0 +1,27 @@
+Source: tyvis
+Build-Depends: debhelper (>> 4.1.0), libtool, libclutils0-dev, libwarped0-dev(>=20031216)
+Section: electronics
+Priority: optional
+Maintainer: Dale E Martin <dmartin@cliftonlabs.com>
+Standards-Version: 3.5.6
+
+Package: libtyvis1
+Architecture: any
+Depends: ${shlibs:Depends}
+Conflicts: tyvis, tyvis1
+Replaces: tyvis, tyvis1
+Description:  UC's VHDL Simulation Runtime Libraries - shared library only
+ This package contains the University of Cincinnati's VHDL runtime
+ libraries.  These libraries are required to run VHDL simulations compiled
+ with the SAVANT analyzer.
+
+Package: libtyvis1-dev
+Architecture: any
+Depends: libc6-dev, libtyvis1 (= ${Source-Version})
+Provides: tyvis-dev
+Conflicts: tyvis-dev, tyvis1-dev
+Replaces: tyvis-dev, tyvis1-dev
+Description: UC's VHDL Simulation Runtime Libraries - C++ headers
+ This package contains the header files for the TyVis package.  In order
+ to compile a simulation, you'll need the both the library package
+ and this one, containing the header files.
