@@ -20,9 +20,9 @@
 // version 2, June 1991. A copy of this license agreement can be found in
 // the file "LGPL", distributed with this archive.
 
-#include <clutils/StringUtilities.h>
-#include <clutils/Debug.h>
-#include <warped/SimulationStream.h>
+#include <StringUtilities.h>
+#include <Debug.h>
+#include <SimulationStream.h>
 #include "VHDLKernel.hh"
 #include "AccessObject.hh"
 #include "SigEvent.hh"

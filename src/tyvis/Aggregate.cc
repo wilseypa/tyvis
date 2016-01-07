@@ -21,7 +21,7 @@
 #include "EnumerationLiteral.hh"
 #include "UniversalInteger.hh"
 #include "TyvisVarArgs.hh"
-#include <clutils/Iterator.h>
+#include <Iterator.h>
 
 using std::ends;
 

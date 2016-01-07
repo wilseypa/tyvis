@@ -20,7 +20,7 @@
 // the file "LGPL", distributed with this archive.
 
 #include "tyvis/tyvis-config.h"
-#include <clutils/Set.h>
+#include <Set.h>
 using clutils::Set;
 
 class SignalBase;

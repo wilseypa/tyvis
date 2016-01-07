@@ -55,7 +55,6 @@ private:
   waitConditionPtr cond;
   waitTimeoutPtr timeout;
 
-
   bool isSensitive(int sigid, SignalBase *signal );
 };
 #endif

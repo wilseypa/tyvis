@@ -17,8 +17,8 @@
 // the file "LGPL", distributed with this archive.
 
 #include <string>
-#include <warped/WarpedMain.h>
-#include <warped/warped.h>
+#include <WarpedMain.h>
+#include <warped.h>
 #include "TyvisPluginLoader.hh"
 #include "VHDLApplication.hh"
 
@@ -35,7 +35,7 @@ main( int argc, char **argv ){
   VHDLApplication *app = TyvisPluginLoader::instance().getVHDLApplication( fileName );
   ASSERT( app != 0 );
 
-  WarpedMain wm( app );
+  WarpedMain wm( app, fileName );
   
   wm.main( argc, argv );
   

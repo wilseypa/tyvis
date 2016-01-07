@@ -22,11 +22,11 @@
 #include "AccessObject.hh"
 #include "std_textioPkg.hh"
 #include "FileTypeInfo.hh"
-#include <warped/FileManager.h>
+#include <FileManager.h>
 #include <cstdio>
 
+using std::ios;
 using std::fstream;
-using warped::FileManager;
 
 const int maxExtraInFilesInProcedure = 5;
 const int maxExtraOutFilesInProcedure = 5;
@@ -45,15 +45,19 @@ FileObject::FileObject( const FileTypeInfo &initTypeInfo,
 			const string &fileName, 
 			const EnumerationLiteral &mode ) :
   ObjectBase( initTypeInfo, fileName ),
-  fileHandle( &openFile(fileName, mode) ),
-  openKind( mode ){}
+  openKind( mode ){
+  fileHandle = new std::fstream();
+  openFile(fileHandle, fileName, mode);
+}
 
 FileObject::FileObject( const FileTypeInfo &initTypeInfo,
 			const CompositeLiteral &fileName,
 			const EnumerationLiteral &mode ) :
   ObjectBase( initTypeInfo, fileName.toString() ),
-  fileHandle( &openFile(fileName.toString(), mode) ),
-  openKind( mode ){}
+  openKind( mode ){
+  fileHandle = new std::fstream();
+  openFile(fileHandle, fileName.toString(), mode);
+}
 
 FileObject::~FileObject(){
   if( fileHandle && *fileHandle ){
@@ -76,7 +80,7 @@ FileObject::nextToken(){
   return buf;
 }
 
-ios::openmode
+std::ios::openmode
 FileObject::getOpenMode( const RValue &mode ){
   ios::openmode retval = ios::in;
   switch( mode.getIntValue() ){
@@ -102,28 +106,28 @@ FileObject::getOpenMode( const RValue &mode ){
 }
 
 
-fstream &
-FileObject::openFile( const string &fileName, 
+void
+FileObject::openFile( std::fstream* stream, const string &fileName, 
 		      const RValue &mode ){
-  fstream &retval = FileManager::instance().open( fileName, getOpenMode(mode) );
-  if( retval == NULL || !retval.good() ){
+  FileManager::instance()->open( stream, fileName, getOpenMode(mode) );
+  if( stream == NULL || !stream->good() ){
     char message[255];
     snprintf( message, sizeof(message), "Error opening %s", fileName.c_str() );
     perror( message );
   }
-  return retval;
 }
 
-fstream &
-FileObject::openFile( const Slice &fileName, 
+void
+FileObject::openFile( std::fstream* stream, const Slice &fileName, 
 		      const RValue &mode ){
-  return openFile( fileName.toString(), mode );
+  return openFile( stream, fileName.toString(), mode );
 }
 
 void
 FileObject::open( const string &fileName, const RValue &openMode ){
   if ((fileHandle == NULL) || !fileHandle->is_open()) {
-    fileHandle = &openFile( fileName, openMode );
+    fileHandle = new std::fstream();
+    openFile(fileHandle, fileName, openMode);
   } else {
     cerr << "file_open called on " << fileName << " which was already open - aborting()" << endl;
     abort();

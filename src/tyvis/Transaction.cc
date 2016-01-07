@@ -18,7 +18,7 @@
 // the file "LGPL", distributed with this archive.
 
 #include "Transaction.hh"
-#include <clutils/AllocatorStack.h>
+#include <AllocatorStack.h>
 
 Transaction::Transaction(const Transaction &src) :
   sourceProcess( src.getSourceProcess() ),

@@ -21,10 +21,12 @@
 // the file "LGPL", distributed with this archive.
 
 #include "tyvis/tyvis-config.h"
-#include <warped/warped.h>
-#include <warped/VTime.h>
+#include <warped.h>
+#include <VTime.h>
 #include <iostream>
 #include <sstream>
+
+using std::string;
 
 typedef warped64_t VHDLVTimeMajor_t;
 typedef warped32_t VHDLVTimeMinor_t;

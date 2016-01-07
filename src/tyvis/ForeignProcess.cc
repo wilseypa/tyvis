@@ -18,14 +18,12 @@
 
 #include "ForeignProcess.hh"
 #include "ForeignProcessFactory.hh"
-#include <clutils/PluginManager.h>
-#include <clutils/Debug.h>
+#include <PluginManager.h>
+#include <Debug.h>
 
 ForeignProcess::ForeignProcess( const string &processName, 
 				_savant_entity_elab *initElabObj ) :
   VHDLProcess( processName, initElabObj ){
-  clutils::debug << "ForeignProcess::ForeignProcess( " << processName << ", " 
-		 << initElabObj << " ) called" << endl;
 }
 
 ForeignProcess::~ForeignProcess(){}
@@ -34,7 +32,6 @@ ForeignProcess *
 ForeignProcess::instantiate( const string &soFile, 
 			     const string &processName, 
 			     _savant_entity_elab *owner ){
-  clutils::debug << "ForeignProcess::instantiate called!" << endl;
 
   ForeignProcess *retval = 0;
   PluginBase *module = PluginManager::instance()->loadPlugin( soFile );

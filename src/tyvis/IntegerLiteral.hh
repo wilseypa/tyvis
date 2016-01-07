@@ -22,8 +22,8 @@
 
 #include "tyvis/tyvis-config.h"
 #include "tyvis/VHDLData.hh"
-#include <warped/SerializedInstance.h>
-#include <warped/DeserializerManager.h>
+#include <SerializedInstance.h>
+#include <DeserializerManager.h>
 #include <iostream>
 using std::cout;
 

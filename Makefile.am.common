@@ -1,12 +1,5 @@
-GLOBALCPPFLAGS = -DDEVELOPER_ASSERTIONS
-GLOBALCXXFLAGS =
-
-AM_CPPFLAGS=$(GLOBALCPPFLAGS) @CPPFLAGS@
-AM_CXXFLAGS=$(GLOBALCXXFLAGS) @CXXFLAGS@
-
-INCLUDES =  \
+AM_CPPFLAGS =$(GLOBALCPPFLAGS) @CPPFLAGS@  \
         -I$(top_srcdir)/VHDLKernel \
         -I$(top_srcdir)/VHDLKernel/standard \
         -I$(top_srcdir)/VHDLKernel/textio \
         -I$(top_src_dir)/src/AMSKernel
-

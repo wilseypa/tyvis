@@ -55,7 +55,7 @@
 #include "savant/set.hh"
 #include "savant/resolution_func.hh"
 #include "savant/StandardPackage.hh"
-#include <clutils/StringUtilities.h>
+#include <StringUtilities.h>
 #include <cstring>
 #include <set>
 #include <sstream>

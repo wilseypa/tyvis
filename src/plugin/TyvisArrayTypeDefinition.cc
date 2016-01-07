@@ -38,7 +38,7 @@
 #include "savant/StandardPackage.hh"
 #include "published_file.hh"
 #include <sstream>
-#include <clutils/StringUtilities.h>
+#include <StringUtilities.h>
 
 void 
 TyvisArrayTypeDefinition::_publish_cc_left( published_file &_cc_out, PublishData *declarations ) {

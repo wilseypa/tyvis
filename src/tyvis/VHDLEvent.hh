@@ -22,8 +22,8 @@
 
 #include "tyvis/tyvis-config.h"
 #include "tyvis/VHDLVTime.hh"
-#include <warped/DefaultEvent.h>
-#include <warped/SerializedInstance.h>
+#include <DefaultEvent.h>
+#include <SerializedInstance.h>
 #include "tyvis/ArrayInfo.hh"
 
 class VHDLKernel;

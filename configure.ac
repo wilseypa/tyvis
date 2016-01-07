@@ -1,8 +1,9 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(tyvis, [2.0-pre031216])
 AC_CONFIG_SRCDIR([src/tyvis/VHDLProcess.cc])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([1.14 foreign subdir-objects])
 AC_PREREQ(2.57)
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 AM_CONFIG_HEADER( src/tyvis/tyvis-config.h )
 
@@ -51,6 +52,8 @@ AC_SUBST(CXXFLAGS)
 AC_SUBST(LDFLAGS)
 AC_SUBST(LIBS)
 AC_SUBST(CXX)
+
+CXXFLAGS="$CXXFLAGS -std=c++11 -Wall"
 
 AC_OUTPUT( [Makefile test/Makefile src/Makefile src/plugin/Makefile] )
 

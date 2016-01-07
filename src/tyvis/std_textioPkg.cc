@@ -20,7 +20,7 @@
 #include "tyvis/std_textioPkg.hh"
 #include "tyvis/AccessObject.hh"
 #include "tyvis/FileObject.hh"
-#include <clutils/StringUtilities.h>
+#include <StringUtilities.h>
 
 FileObject &
 getstd_textio__inputObject(){
@@ -163,8 +163,7 @@ std_textio_linerealsavantread( VHDLProcess *processPtr,
                                LValue &l,
                                LValue &value ){
   string lineString = l.readVal().toString();
-  int realEnd;
-  double realVal = stringToDouble(lineString, realEnd);
+  double realVal = stringToDouble(lineString);
   value.updateVal(UniversalReal(realVal));
   return NORMAL_RETURN;
 }

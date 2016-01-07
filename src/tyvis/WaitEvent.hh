@@ -21,7 +21,7 @@
 // the file "LGPL", distributed with this archive.
 
 #include "tyvis/tyvis-config.h"
-#include <warped/DeserializerManager.h>
+#include <DeserializerManager.h>
 #include "tyvis/VHDLEvent.hh"
 #include "tyvis/VHDLKernel.hh"
 #include "tyvis/VHDLVTime.hh"

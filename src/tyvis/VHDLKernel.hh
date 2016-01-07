@@ -28,7 +28,7 @@
 #include "tyvis/VHDLKernel_state.hh"
 #include "tyvis/VHDLVTime.hh"
 #include "tyvis/EnumerationLiteral.hh"
-#include <clutils/Set.h>
+#include <Set.h>
 
 using std::vector;
 using std::istream;

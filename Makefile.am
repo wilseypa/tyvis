@@ -19,8 +19,7 @@
 # version 2, June 1991. A copy of this license agreement can be found in
 # the file "LGPL", distributed with this archive.
 
-AM_CPPFLAGS= @CPPFLAGS@ -DDEVELOPER_ASSERTIONS -I$(top_srcdir)/src
-AM_CXXFLAGS= @CXXFLAGS@
+AM_CPPFLAGS= @CPPFLAGS@ -I$(top_srcdir)/src
 
 SUBDIRS= src test
 
@@ -96,7 +95,7 @@ IEEE_VHDL_FILES = \
         $(IEEE_DIR)/prmtvs_b.vhd \
         $(IEEE_DIR)/memory_p.vhd \
         $(IEEE_DIR)/memory_b.vhd \
-	$(IEEE_DIR)/std_logic_arith.vhd \
+        $(IEEE_DIR)/std_logic_arith.vhd \
         $(IEEE_DIR)/std_logic_unsigned.vhd \
         $(IEEE_DIR)/std_logic_signed.vhd \
         $(IEEE_DIR)/std_logic_textio.vhd \
@@ -114,7 +113,8 @@ $(IEEE_CPP_FILES): $(IEEE_VHDL_FILES) $(libdir)/libtyvisplugin.la
 	touch $(IEEE_CPP_FILES)
 
 $(IEEE_LA_FILE): $(IEEE_CPP_FILES)
-	$(MAKE) -C $(IEEE_DIR)
+#	$(MAKE) -C $(IEEE_DIR)
+# the line above is commented because it tries to compiles the produced files.
 
-all-local: $(IEEE_LA_FILE)
+install-data-local: $(IEEE_LA_FILE)
 

@@ -2,8 +2,8 @@
 #include "tyvis/UniversalReal.hh"
 #include "tyvis/UniversalInteger.hh"
 #include "tyvis/Value.hh"
-#include <warped/SerializedInstance.h>
-#include <clutils/StringUtilities.h>
+#include <SerializedInstance.h>
+#include <StringUtilities.h>
 #include <sstream>
 using std::ostringstream;
 

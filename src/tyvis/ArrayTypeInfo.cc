@@ -25,7 +25,7 @@
 #include "StringLiteral.hh"
 #include "std_standardPkg.hh"
 #include "SubElementFactory.hh"
-#include <clutils/StringUtilities.h>
+#include <StringUtilities.h>
 
 //ArrayTypeInfo constructors
 ArrayTypeInfo::ArrayTypeInfo() :

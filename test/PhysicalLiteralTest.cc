@@ -11,8 +11,8 @@
 #include "tyvis/EnumerationLiteral.hh"
 #include "tyvis/PhysicalLiteral.hh"
 #include "tyvis/PhysicalTypeInfo.hh"
-#include <warped/SerializedInstance.h>
-#include <clutils/StringUtilities.h>
+#include <SerializedInstance.h>
+#include <StringUtilities.h>
 #include "PhysicalTypeInfoTest.hh"
 #include <sstream>
 using std::ostringstream;

@@ -14,7 +14,7 @@
 #include <cppunit/ui/text/TestRunner.h>
 
 #include "tyvis/vhdl.hh"
-#include <warped/WarpedMain.h>
+#include <WarpedMain.h>
 
 // Add test case headers here
 // #include "ArrayTypeTest.hh"

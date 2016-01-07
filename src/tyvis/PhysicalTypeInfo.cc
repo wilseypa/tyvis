@@ -21,8 +21,8 @@
 #include "PhysicalTypeInfo.hh"
 #include "PhysicalLiteral.hh"
 #include "std_standardPkg.hh"
-#include <warped/warped.h>
-#include <clutils/StringUtilities.h>
+#include <warped.h>
+#include <StringUtilities.h>
 #include <cmath>
 
 //The constructors for PhysicalTypeInfo

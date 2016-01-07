@@ -33,7 +33,7 @@
 #include "TyvisName.hh"
 #include "TyvisPackageDeclaration.hh"
 
-#include <clutils/FileManager.h>
+#include <FileManager.h>
 #include <sstream>
 #include "savant/error_func.hh"
 #include "savant/resolution_func.hh"

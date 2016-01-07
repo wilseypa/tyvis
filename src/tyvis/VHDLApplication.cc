@@ -21,9 +21,9 @@
 #include "VHDLApplication.hh"
 #include "VHDLKernel.hh"
 #include "Hierarchy.hh"
-#include <clutils/StringHashMap.h>
-#include <warped/PartitionInfo.h>
-#include <warped/RoundRobinPartitioner.h>
+#include <StringHashMap.h>
+#include <PartitionInfo.h>
+#include <RoundRobinPartitioner.h>
 #include <cstring>
 #include <fstream>
 #include <cstdlib>

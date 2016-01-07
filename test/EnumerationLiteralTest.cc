@@ -12,8 +12,8 @@
 #include "tyvis/EnumerationLiteral.hh"
 #include "tyvis/EnumerationTypeInfo.hh"
 #include "tyvis/UniversalInteger.hh"
-#include <warped/SerializedInstance.h>
-#include <clutils/StringUtilities.h>
+#include <SerializedInstance.h>
+#include <StringUtilities.h>
 #include <sstream>
 using std::ostringstream;
 

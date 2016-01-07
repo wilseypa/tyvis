@@ -31,7 +31,6 @@ class StringLiteralTest : public SliceTest {
   CPPUNIT_TEST(testPrint);
   CPPUNIT_TEST(testSerialization);
   CPPUNIT_TEST(testToString);
-  CPPUNIT_TEST(testGetSlice);
   CPPUNIT_TEST(testLeft);
   CPPUNIT_TEST(testRight);
   CPPUNIT_TEST(testHigh);

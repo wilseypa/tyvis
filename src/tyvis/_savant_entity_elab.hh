@@ -22,7 +22,7 @@
 
 #include "tyvis/tyvis-config.h"
 #include "tyvis/PortMap.hh"
-#include <clutils/PluginBase.h>
+#include <PluginBase.h>
 #include <vector>
 using std::vector;
 

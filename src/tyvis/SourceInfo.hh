@@ -23,8 +23,8 @@
 #include "tyvis/tyvis-config.h"
 #include "tyvis/Types.hh"
 #include "tyvis/SourceBase.hh"
-#include <warped/warped.h>
-#include <clutils/StringHashMap.h>
+#include <warped.h>
+#include <StringHashMap.h>
 
 extern ResolutionFnPtr *savantResolutionFn;
 extern TypeConversionFnPtr *savantTypeConversionFn;
@@ -130,7 +130,7 @@ private:
   /**
      Our index of children.  We the index is case sensitive.
   */
-  StringHashMap<SourceBase *, true> childIndex;
+  StringHashMap<SourceBase *> childIndex;
 };
 
 #endif

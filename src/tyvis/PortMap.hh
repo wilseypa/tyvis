@@ -22,7 +22,7 @@
 
 #include "tyvis/tyvis-config.h"
 #include "tyvis/Types.hh"
-#include <clutils/Set.h>
+#include <Set.h>
 
 using clutils::Set;
 class PortAssociation;

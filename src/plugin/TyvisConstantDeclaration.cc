@@ -35,7 +35,7 @@
 #include "published_file.hh"
 #include <sstream>
 #include "PublishData.hh"
-#include <clutils/StringUtilities.h>
+#include <StringUtilities.h>
 
 string
 TyvisConstantDeclaration::_mangle_declarator(){

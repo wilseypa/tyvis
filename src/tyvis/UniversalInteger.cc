@@ -21,7 +21,7 @@
 #include "UniversalReal.hh"
 #include "PhysicalLiteral.hh"
 #include "AccessObject.hh"
-#include <clutils/StringUtilities.h>
+#include <StringUtilities.h>
 #include <sstream>
 #include <cmath>
 #include <typeinfo>

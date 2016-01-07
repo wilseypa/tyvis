@@ -17,8 +17,8 @@
 // version 2, June 1991. A copy of this license agreement can be found in
 // the file "LGPL", distributed with this archive.
 
-#include <warped/SerializedInstance.h>
-#include <warped/DeserializerManager.h>
+#include <SerializedInstance.h>
+#include <DeserializerManager.h>
 #include "VHDLVTime.hh"
 
 const VHDLVTime &

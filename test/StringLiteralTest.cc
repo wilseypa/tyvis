@@ -12,8 +12,8 @@
 #include "tyvis/StringLiteral.hh"
 #include "tyvis/ArrayTypeInfo.hh"
 #include "tyvis/std_standardPkg.hh"
-#include <warped/SerializedInstance.h>
-#include <clutils/StringUtilities.h>
+#include <SerializedInstance.h>
+#include <StringUtilities.h>
 #include <sstream>
 using std::ostringstream;
 
@@ -134,15 +134,6 @@ StringLiteralTest::testToString(){
   
   CPPUNIT_ASSERT( a.toString() == "foo" );
   CPPUNIT_ASSERT( b.toString() == "bar" );
-}
-
-void
-StringLiteralTest::testGetSlice(){
-  StringLiteral l1( getStringInfo(), "foobar" );
-  Value slice1 = l1.getSlice( IntegerTypeInfo( 1, ArrayInfo::to, 3 ) );
-  Value slice2 = l1.getSlice( IntegerTypeInfo( 4, ArrayInfo::to, 6 ) );
-  CPPUNIT_ASSERT( slice1 == VHDL_STRING("foo") );
-  CPPUNIT_ASSERT( slice2 == VHDL_STRING("bar") );
 }
 
 void

@@ -48,7 +48,7 @@ AccessTypeInfo::operator==( const TypeInfo &that ) const {
   bool retval = false;
   if( dynamic_cast<const AccessTypeInfo *>( &that ) ){
     const AccessTypeInfo *thatAccessType = dynamic_cast<const AccessTypeInfo *>( &that );
-    retval == ( *designatedType == *thatAccessType->designatedType );
+    retval = ( *designatedType == *thatAccessType->designatedType );
   }
   return retval;
 }

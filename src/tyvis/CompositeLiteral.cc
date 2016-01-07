@@ -29,7 +29,7 @@
 #include "SubElementFactory.hh"
 #include "TyvisVarArgs.hh"
 
-#include <clutils/Iterator.h>
+#include <Iterator.h>
 #include <iostream>
 #include <set>
 using std::cerr;

@@ -26,38 +26,6 @@
 
 include $(top_srcdir)/Makefile.am.common
 
-SCRAMFLAGS= --design-library-name ieee --publish-cc 
-
-IEEE_INPUT_DIR=$(libdir)/savant/lib/ieee._savant_lib
-
-IEEE_VHDL_FILES = \
-	$(IEEE_INPUT_DIR)/std_logic_1164.vhd \
-	$(IEEE_INPUT_DIR)/timing_p.vhd \
-	$(IEEE_INPUT_DIR)/timing_b.vhd \
-	$(IEEE_INPUT_DIR)/numeric_bit.vhd \
-	$(IEEE_INPUT_DIR)/numeric_std.vhd \
-	$(IEEE_INPUT_DIR)/prmtvs_p.vhd \
-	$(IEEE_INPUT_DIR)/prmtvs_b.vhd \
-	$(IEEE_INPUT_DIR)/memory_p.vhd \
-	$(IEEE_INPUT_DIR)/memory_b.vhd \
-	$(IEEE_INPUT_DIR)/std_logic_unsigned.vhd \
-	$(IEEE_INPUT_DIR)/std_logic_signed.vhd \
-	$(IEEE_INPUT_DIR)/std_logic_textio.vhd \
-	$(IEEE_INPUT_DIR)/attributes.vhd \
-	$(IEEE_INPUT_DIR)/std_logic_misc.vhd \
-	$(IEEE_INPUT_DIR)/math_complex.vhd \
-	$(IEEE_INPUT_DIR)/math_real.vhd
-
-IEEE_OUTPUT_DIR = $(top_srcdir)/src/ieee._savant_lib
-
-# all-local: $(IEEE_OUTPUT_DIR)
-
-#clean-local:
-#	rm -rf $(IEEE_OUTPUT_DIR)
-
-$(IEEE_OUTPUT_DIR): $(bindir)/scram $(IEEE_FILES) libtyvisplugin.la
-	SAVANTROOT=$(bindir) $(bindir)/scram $(SCRAMFLAGS) $(IEEE_VHDL_FILES)
-
 lib_LTLIBRARIES = libtyvisplugin.la
 
 libtyvisplugin_la_LDFLAGS = \
@@ -608,3 +576,33 @@ libtyvisplugin_la_SOURCES = \
 	published_header_file.hh \
 	published_makefile.hh \
 	published_makefile.cc
+
+IEEE_INPUT_DIR = $(libdir)/savant/lib/ieee._savant_lib
+
+IEEE_VHDL_FILES = \
+	$(IEEE_INPUT_DIR)/std_logic_1164.vhd \
+	$(IEEE_INPUT_DIR)/timing_p.vhd \
+	$(IEEE_INPUT_DIR)/timing_b.vhd \
+	$(IEEE_INPUT_DIR)/numeric_bit.vhd \
+	$(IEEE_INPUT_DIR)/numeric_std.vhd \
+	$(IEEE_INPUT_DIR)/prmtvs_p.vhd \
+	$(IEEE_INPUT_DIR)/prmtvs_b.vhd \
+	$(IEEE_INPUT_DIR)/memory_p.vhd \
+	$(IEEE_INPUT_DIR)/memory_b.vhd \
+	$(IEEE_INPUT_DIR)/std_logic_unsigned.vhd \
+	$(IEEE_INPUT_DIR)/std_logic_signed.vhd \
+	$(IEEE_INPUT_DIR)/std_logic_textio.vhd \
+	$(IEEE_INPUT_DIR)/attributes.vhd \
+	$(IEEE_INPUT_DIR)/std_logic_misc.vhd \
+	$(IEEE_INPUT_DIR)/math_complex.vhd \
+	$(IEEE_INPUT_DIR)/math_real.vhd
+
+IEEE_OUTPUT_DIR = $(top_srcdir)/src/ieee._savant_lib
+
+# all-local: $(IEEE_OUTPUT_DIR)
+
+#clean-local:
+#	rm -rf $(IEEE_OUTPUT_DIR)
+
+$(IEEE_OUTPUT_DIR): $(bindir)/scram libtyvisplugin.la
+	SAVANTROOT=$(bindir) $(bindir)/scram --design-library-name ieee --publish-cc  $(IEEE_VHDL_FILES)

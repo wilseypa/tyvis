@@ -21,7 +21,7 @@
 #include "UniversalInteger.hh"
 #include "AccessObject.hh"
 #include "std_standardPkg.hh"
-#include <clutils/StringUtilities.h>
+#include <StringUtilities.h>
 #include <sstream>
 using std::stringstream;
 using std::ostringstream;
