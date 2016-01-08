@@ -345,8 +345,8 @@ TyvisEntityDeclaration::_publish_cc_ccfile(PublishData *declarations){
 
   cc_file << "#include \"" << file_name.str() << ".hh\"\n";
 
-  cc_file << "class VHDLKernel;\n";
-  cc_file << "extern VHDLKernel *proc_array[];\n";
+  //cc_file << "class VHDLKernel;\n";
+  //cc_file << "extern VHDLKernel *proc_array[];\n";
 
   CC_REF( cc_file, "TyvisEntityDeclaration::_publish_cc_ccfile" );
 
@@ -405,8 +405,10 @@ TyvisEntityDeclaration::_publish_cc_constructor_with_no_arguments( published_fil
   CC_REF( _cc_out, "TyvisEntityDeclaration::_publish_cc_constructor_with_no_arguments" );
 
   _cc_out << _get_cc_elaboration_class_name() << "::" << _get_cc_elaboration_class_name() << "(";
-  _get_port_clause()->_publish_cc_unconstrained_ports( _cc_out, declarations, TRUE, TRUE, FALSE );
-  _cc_out << ")";
+  if(_get_port_clause()->_publish_cc_unconstrained_ports( _cc_out, declarations, TRUE, TRUE, FALSE ))
+     _cc_out << ",";
+  _cc_out << "const std::string& name"
+          << ")";
 
   bool firstDeclFlag = false;  
   if( numGenericClause > 0 ) {
@@ -428,8 +430,10 @@ TyvisEntityDeclaration::_publish_cc_constructor_with_no_arguments( published_fil
   }
   
   first = _get_entity_declarative_part()->_publish_cc_constants_init( _cc_out, declarations, first);
-  _publish_cc_signal_objects_init( _cc_out, declarations, first );  
-  _cc_out << OS("{");
+  if(_publish_cc_signal_objects_init( _cc_out, declarations, first ))
+     _cc_out << ",";
+  _cc_out << "LogicalProcess(name)"
+          << OS("{");
   // before newing the elab guys down the heirarchy copy generics of this
   // entity to the global generic pointers in the entity_decls file
   if (numGenericClause > 0) {
@@ -495,19 +499,19 @@ TyvisEntityDeclaration::_publish_cc_component_decl( published_file &_cc_out, Pub
   }
 }
 
-void
+int
 TyvisEntityDeclaration::_publish_cc_signal_objects_init( published_file &_cc_out,
                                                                 PublishData *declarations,
                                                                 const IIR_Boolean firstFlag ){
   TyvisDeclaration* decl = dynamic_cast<TyvisDeclaration *>(get_entity_declarative_part()->first());
-
+  int retvalue = 0;
   int numGenericClause = get_generic_clause()->size();
   int numPortClause    = get_port_clause()->size();
   IIR_Boolean first    = firstFlag;
   
   CC_REF( _cc_out, "TyvisEntityDeclaration::_publish_cc_signal_objects_init" );
   
-  while (decl != NULL) {
+  for (;decl != NULL; retvalue++) {
     if (decl->get_kind() == IIR_SIGNAL_DECLARATION) {
       if (first == TRUE) {
 	_cc_out << ":\n";
@@ -563,6 +567,7 @@ TyvisEntityDeclaration::_publish_cc_signal_objects_init( published_file &_cc_out
     }
     decl = dynamic_cast<TyvisDeclaration *>(get_entity_declarative_part()->successor(decl));
   }
+  return retvalue;
 }
 
 void 

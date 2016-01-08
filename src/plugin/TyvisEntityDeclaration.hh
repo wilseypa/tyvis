@@ -49,7 +49,7 @@ public:
   void _publish_cc_constructor( published_file &_cc_out, PublishData *declarations );
   void _publish_cc_constructor_with_no_arguments( published_file &_cc_out, PublishData *declarations );
   void _publish_cc_constructor_with_arguments( published_file &_cc_out, PublishData *declarations );
-  void _publish_cc_signal_objects_init( published_file &_cc_out, PublishData *declarations, const IIR_Boolean = TRUE );
+  int _publish_cc_signal_objects_init( published_file &_cc_out, PublishData *declarations, const IIR_Boolean = TRUE );
   void _publish_cc_include_decls_prefix( ostream &os );
   void _publish_cc_scoping_prefix( ostream &, Tyvis *, Tyvis * );
 
