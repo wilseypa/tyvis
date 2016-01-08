@@ -104,15 +104,15 @@ TyvisEntityDeclaration::_publish_cc_headerfile(PublishData *declarations){
 				     this );
   CC_REF( header_file, "TyvisEntityDeclaration::_publish_cc_headerfile" );
   
-  Tyvis::_publish_cc_include( header_file, "tyvis/_savant_entity_elab.hh" );
+  //Tyvis::_publish_cc_include( header_file, "tyvis/_savant_entity_elab.hh" );
   
   // For AMS constructs
-  if (lang_proc->processing_vhdl_ams()) {
-    Tyvis::_publish_cc_include( header_file, "tyvis/_savant_entity_ams_elab.hh");
-  }
+  //if (lang_proc->processing_vhdl_ams()) {
+  //  Tyvis::_publish_cc_include( header_file, "tyvis/_savant_entity_ams_elab.hh");
+  //}
   
-  Tyvis::_publish_cc_include( header_file, "tyvis/SignalNetinfo.hh" );
-  Tyvis::_publish_cc_include( header_file, "tyvis/STDTypes.hh" );
+  //Tyvis::_publish_cc_include( header_file, "tyvis/SignalNetinfo.hh" );
+  //Tyvis::_publish_cc_include( header_file, "tyvis/STDTypes.hh" );
 
   // All the declarations are included through this file 
   _publish_cc_include_decls( header_file );
@@ -125,19 +125,21 @@ void
 TyvisEntityDeclaration::_publish_cc_class( published_file &_cc_out, PublishData *declarations ) {
 
   CC_REF( _cc_out, "TyvisEntityDeclaration::_publish_cc_class" );
+  // define the state for Warped2
+  _cc_out << "#ifndef myVHDLState" << NL() << "#define myVHDLState" << NL()
+          << OS("WARPED_DEFINE_LP_STATE_STRUCT(VHDLState) {")
+	       << "bool state_;" << CS("};")
+          << "#endif\n\n";
   
-  _cc_out <<"class " << _get_cc_elaboration_class_name();
-  if(lang_proc->processing_vhdl_ams()) {
-    _cc_out << " : public _savant_entity_ams_elab";
-  }
-  else {
-    _cc_out << " : public _savant_entity_elab";
-  }
-  _cc_out << OS("{")
-	  << "\npublic:\n";
+  _cc_out << "class " << _get_cc_elaboration_class_name()
+          << " : public warped::LogicalProcess";
+  _cc_out << OS(" {")
+	  << "\npublic:" << NL();
   _cc_out << _get_cc_elaboration_class_name() << OS("(");
-  _get_port_clause()->_publish_cc_unconstrained_ports( _cc_out, declarations, TRUE, FALSE, FALSE );
-  _cc_out << CS(");");
+  if(_get_port_clause()->_publish_cc_unconstrained_ports( _cc_out, declarations, TRUE, FALSE, FALSE ))
+     _cc_out << "," << NL();
+  _cc_out << "const std::string& name" << NL()
+          << CS(");");
   
   if( _get_generic_clause()->size() > 0 ){
     _cc_out << _get_cc_elaboration_class_name() << OS("(");
@@ -147,8 +149,12 @@ TyvisEntityDeclaration::_publish_cc_class( published_file &_cc_out, PublishData 
     _cc_out << CS(");");
   }
 
-  _cc_out << "~" << _get_cc_elaboration_class_name() << "();" << NL();
+  _cc_out << "~" << _get_cc_elaboration_class_name() << "();" << NL()
+	  << "virtual warped::LPState& getState() override final { return this->state_; }" << NL()
+	  << "virtual std::vector<std::shared_ptr<warped::Event>> assignSignal( const std::string name, const int value, unsigned int delay, unsigned int timestamp ) = 0;" << NL()
+     << "void addLP( const std::string name ) { objects_.push_back(name); }" << NL();
 
+  _cc_out << "// The following members have to be pushed in the objects_ vector" << NL();
   _get_generic_clause()->_publish_cc_elaborate( _cc_out, declarations );
   _get_port_clause()->_publish_cc_elaborate( _cc_out, declarations );
   //Aliases for signal objects are also published
@@ -159,7 +165,15 @@ TyvisEntityDeclaration::_publish_cc_class( published_file &_cc_out, PublishData 
     _cc_out << "void copyGenericsToGlobals();" << NL();
   }
   _get_entity_declarative_part()->_publish_cc_constants( _cc_out, declarations );
-  _cc_out << CS("};");
+  _cc_out << "// Element state" << NL()
+          << "VHDLState state_;" << NL()
+          << "// map < signal_name, value >" << NL()
+          << "std::map<std::string, int> signals_;" << NL()
+          << "// map < mysignal, vector<pair < subelement, name_in_subelement > > >" << NL()
+          << "std::map<std::string, std::vector<std::pair<std::string, std::string>>> hierarchy_;" << NL()
+          << "// The other LogicalProcesses I know" << NL()
+          << "std::vector<std::string> objects_;" << NL()
+          << CS("};");
 }
 
 void

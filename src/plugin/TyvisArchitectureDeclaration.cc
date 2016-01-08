@@ -256,6 +256,7 @@ void
 TyvisArchitectureDeclaration::_publish_cc_class( published_file &_cc_out,
 						 PublishData *declarations ) {
   CC_REF( _cc_out, "TyvisArchitectureDeclaration::_publish_cc_class" );
+
   _get_entity()->_publish_cc_include_elab( _cc_out );
   _cc_out << "class " << _get_cc_elaboration_class_name() 
 	  << " : public "
@@ -265,10 +266,12 @@ TyvisArchitectureDeclaration::_publish_cc_class( published_file &_cc_out,
 
   // Publish the constructor
   _cc_out << _get_cc_elaboration_class_name() << "(";
-  _get_entity()->_get_port_clause()->_publish_cc_unconstrained_ports( _cc_out,
+  if(_get_entity()->_get_port_clause()->_publish_cc_unconstrained_ports( _cc_out,
 								      declarations,
-								      TRUE, FALSE, FALSE);
-  _cc_out << ");" << NL();  
+								      TRUE, FALSE, FALSE))
+     _cc_out << ",";
+  _cc_out << "const std::string& name"
+          << ");" << NL();
 
   if(_get_entity()->get_generic_clause()->size() > 0) {
     _cc_out << _get_cc_elaboration_class_name() << "(" << NL();
@@ -280,14 +283,10 @@ TyvisArchitectureDeclaration::_publish_cc_class( published_file &_cc_out,
   }
 
   // The destructor.
-  _cc_out << "~" << _get_cc_elaboration_class_name() << "();" << NL() << NL()
-	  << "void instantiate(Hierarchy *, const string parent_base, const char *local_name);" << NL()
-          << "std::string _base;" << NL()
-          << "std::string get_base() {return(_base);}" << NL()
-	  << "void createNetInfo();" << NL()
-	  << "void connect(int, int, ...);" << NL()
-	  << "void partition() {}" << NL()
-	  << "_savant_entity_elab *getArchitecture(){ return this; }" << NL();// { return this; }";
+  _cc_out << "~" << _get_cc_elaboration_class_name() << "();\n" << NL()
+	       << "virtual std::vector<std::shared_ptr<warped::Event>> receiveEvent( const warped::Event& ) override;" << NL()
+	       << "virtual std::vector<std::shared_ptr<warped::Event>> initializeLP() override;" << NL()
+	  << "virtual std::vector<std::shared_ptr<warped::Event>> assignSignal( const std::string name, const int value, unsigned int delay, unsigned int timestamp ) override;" << NL();
 
   if( lang_proc->processing_vhdl_ams() ){
     _publish_cc_ams_objects( _cc_out, declarations );
@@ -319,7 +318,8 @@ TyvisArchitectureDeclaration::_publish_cc_class( published_file &_cc_out,
   }
   else{
     // Publish the pointers to processes and objects used in this architecture
-    _publish_cc_object_pointers( _cc_out, _get_architecture_statement_part(), declarations );
+    // TODO: Here I find all the object of the subhierarchy that I need
+    //_publish_cc_object_pointers( _cc_out, _get_architecture_statement_part(), declarations );
   }
 
   // Publish file objects.
@@ -456,7 +456,7 @@ TyvisArchitectureDeclaration::_publish_cc_constructor_with_no_arguments( publish
   _cc_out << _get_cc_elaboration_class_name() << "::"
 	  << _get_cc_elaboration_class_name() << OS("( ");
   noOfUnconstrainedPorts = 
-    _get_entity()->_get_port_clause()->_publish_cc_unconstrained_ports( _cc_out, declarations, TRUE, TRUE, FALSE );
+    _get_entity()->_get_port_clause()->_publish_cc_unconstrained_ports( _cc_out, declarations, TRUE, TRUE, FALSE);
   _cc_out << CS(")");
   
   if (noOfUnconstrainedPorts > 0) {

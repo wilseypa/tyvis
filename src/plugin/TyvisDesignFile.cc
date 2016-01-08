@@ -55,6 +55,7 @@ TyvisDesignFile::_publish_cc( bool last_file_this_run ) {
   _get_library_units()->_publish_cc();
 
   // We're assuming that the last file this run is the top level.
+  // this procedure publish the makefile. Pointless for the moment.
   _publish_cc_makefile( last_file_this_run );
 
   _get_library_units()->_publish_cc_elaborate();
@@ -183,23 +184,21 @@ TyvisDesignFile::_publish_cc_main(){
   CC_REF( cc_file, "TyvisDesignFile::_publish_cc_main" );
 
   _publish_cc_include( cc_file, _get_top_level_design_unit_name() + ".hh" );
-  _publish_cc_include( cc_file, "warped/WarpedMain.h", true );
-  _publish_cc_include( cc_file, "tyvis/VHDLApplication.hh", true );
-  if (lang_proc->processing_vhdl_ams()) {
-    _publish_cc_include( cc_file, "tyvis/AMSApplication.hh", true);
-  }
+  _publish_cc_include( cc_file, "warped.hpp", true );
+  //_publish_cc_include( cc_file, "tyvis/VHDLApplication.hh", true );
+  //if (lang_proc->processing_vhdl_ams()) {
+  //  _publish_cc_include( cc_file, "tyvis/AMSApplication.hh", true);
+  //}
   
   cc_file << "int" << NL()
 	  << OS("main( int argc, char **argv ){")
-	  << OS("WarpedMain wm(");
-  if ( lang_proc->processing_vhdl_ams() ){
-    cc_file << "new AMSApplication( new " << _get_top_level_design_unit_name() << " )";
-  }
-  else {
-    cc_file << "new VHDLApplication( new " << _get_top_level_design_unit_name() << " )";
-  }
-  cc_file << CS(");")
-	  << "wm.main( argc, argv );" << NL()
+     << "// In this vector you can add custom parameters" << NL()
+	  << "std::vector<TCLAP::Arg*> args;" << NL()
+	  << OS("warped::Simulation sim {")
+     << "\"Digital Simulation\", argc, argv, args"
+     // TODO: circuit constructor
+	  << CS("};")
+	  << "sim.simulate();"
 	  << CS("}");
 }
 
