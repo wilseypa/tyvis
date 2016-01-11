@@ -510,15 +510,15 @@ TyvisEntityDeclaration::_publish_cc_signal_objects_init( published_file &_cc_out
   IIR_Boolean first    = firstFlag;
   
   CC_REF( _cc_out, "TyvisEntityDeclaration::_publish_cc_signal_objects_init" );
+  _cc_out << ":\n";
   
   for (;decl != NULL; retvalue++) {
     if (decl->get_kind() == IIR_SIGNAL_DECLARATION) {
-      if (first == TRUE) {
-	_cc_out << ":\n";
-	first = FALSE;
+      if (first = TRUE) {
+         first = FALSE;
       }
       else {
-	_cc_out << ",\n";
+         _cc_out << ",\n";
       }
       decl->_publish_cc_elaborate( _cc_out, declarations );
       _cc_out << "(";
