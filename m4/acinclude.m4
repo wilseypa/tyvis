@@ -66,13 +66,13 @@ if test $cl_cv_lib_warped != /usr ; then
 LDFLAGS="$LDFLAGS -L$cl_cv_lib_warped/lib"
 CPPFLAGS="$CPPFLAGS -I$cl_cv_lib_warped/include"
 fi
-AC_CHECK_HEADER(SimulationObject.h, ,
-  AC_MSG_ERROR(Couldn't find warped/SimulationObject.h which is required and 
-    part of the warped distribution.  You probably need to install it
+AC_CHECK_HEADER(LogicalProcess.hpp, ,
+  AC_MSG_ERROR(Couldn't find warped/LogicalProcess.hpp which is required and 
+    part of the warped2 distribution.  You probably need to install it
     and/or specify the location of it with the --with-warped option.))
-AC_CHECK_LIB(warped, isWarped, ,
+AC_CHECK_LIB([warped], [warped_is_present], ,
   AC_MSG_ERROR(Could not find a workable libwarped.so or libwarped.a.
-    You probably need to install warped and/or specify the location of
+    You probably need to install warped2 and/or specify the location of
     it with the --with-warped option.), -lltdl )
 ]) dnl end CL_LIB_WARPED
 

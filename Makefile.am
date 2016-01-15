@@ -19,9 +19,11 @@
 # version 2, June 1991. A copy of this license agreement can be found in
 # the file "LGPL", distributed with this archive.
 
+ACLOCAL_AMFLAGS = -I m4
+
 AM_CPPFLAGS= @CPPFLAGS@ -I$(top_srcdir)/src
 
-SUBDIRS= src test
+SUBDIRS= src
 
 EXTRA_DIST= Makefile.am.common
 
