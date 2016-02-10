@@ -26,7 +26,7 @@
 #include "TyvisIdentifier.hh"
 #include "TyvisLibraryDeclaration.hh"
 #include "TyvisLibraryUnitList.hh"
-#include "savant/scram.hh"
+#include <savant/generic_parser.hh>
 #include "savant/set.hh"
 #include "published_makefile.hh"
 #include "published_cc_file.hh"
