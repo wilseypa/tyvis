@@ -84,14 +84,14 @@ TyvisLibraryUnit::_publish_cc_include_decls( published_file &_cc_out ){
   CC_REF( _cc_out, "TyvisLibraryUnit::_publish_cc_include_decls" );
   ostringstream filename;
   _publish_cc_include_decls_prefix( filename );
-  filename << ".hh";
+  filename << ".hpp";
   Tyvis::_publish_cc_include( _cc_out, filename.str() );
 }
 
 void 
 TyvisLibraryUnit::_publish_cc_include_elab( published_file &_cc_out ){
   CC_REF( _cc_out, "TyvisLibraryUnit::_publish_cc_include_elab" );
-  const string filename = _get_cc_elaboration_class_name() + ".hh";
+  const string filename = _get_cc_elaboration_class_name() + ".hpp";
   Tyvis::_publish_cc_include( _cc_out, filename );
 }
 

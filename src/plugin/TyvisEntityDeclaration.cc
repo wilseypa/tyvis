@@ -343,7 +343,7 @@ TyvisEntityDeclaration::_publish_cc_ccfile(PublishData *declarations){
 			     this );
   CC_REF( cc_file, "TyvisEntityDeclaration::_publish_cc_ccfile" );
 
-  cc_file << "#include \"" << file_name.str() << ".hh\"\n";
+  cc_file << "#include \"" << file_name.str() << ".hpp\"\n";
 
   //cc_file << "class VHDLKernel;\n";
   //cc_file << "extern VHDLKernel *proc_array[];\n";

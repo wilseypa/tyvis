@@ -182,8 +182,7 @@ TyvisDesignFile::_publish_cc_main(){
 			     "main",
 			     this );
   CC_REF( cc_file, "TyvisDesignFile::_publish_cc_main" );
-
-  _publish_cc_include( cc_file, _get_top_level_design_unit_name() + ".hh" );
+  _publish_cc_include( cc_file, _get_top_level_design_unit_name() + ".hpp" );
   _publish_cc_include( cc_file, "warped.hpp", true );
   //_publish_cc_include( cc_file, "tyvis/VHDLApplication.hh", true );
   //if (lang_proc->processing_vhdl_ams()) {

@@ -41,7 +41,7 @@ published_cc_file::~published_cc_file(){
 
 const string 
 published_cc_file::get_file_suffix(){
-  static const string suffix = ".cc";
+  static const string suffix = ".cpp";
   return suffix;
 }
 

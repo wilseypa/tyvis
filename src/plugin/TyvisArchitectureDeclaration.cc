@@ -247,7 +247,7 @@ TyvisArchitectureDeclaration::_publish_cc_headerfile( PublishData *declarations 
 
   // Just include the decls file which has all the required includes
   // _publish_cc_include_decls( header_file );
-  Tyvis::_publish_cc_include( header_file, _get_cc_design_unit_name() + ".hh" );
+  Tyvis::_publish_cc_include( header_file, _get_cc_design_unit_name() + ".hpp" );
   _publish_cc_class_includes( header_file, _get_architecture_statement_part() );
   _publish_cc_class( header_file, declarations );
 }
