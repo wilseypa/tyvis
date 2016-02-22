@@ -7,7 +7,7 @@ AC_PREREQ(2.57)
 AC_CONFIG_MACRO_DIR([m4])
 LT_INIT
 
-AM_CONFIG_HEADER( src/tyvis/tyvis-config.h )
+AC_CONFIG_HEADERS( [src/tyvis/tyvis-config.h:src/tyvis/tyvis-config.h.in] )
 AC_LANG([C++])
 AC_SUBST(TYVIS_VERSION,[2.0-pre031216])
 
@@ -23,6 +23,11 @@ AC_PROG_CXXCPP
 AC_PROG_INSTALL
 AC_LIBTOOL_DLOPEN
 AC_PROG_LIBTOOL
+AC_C_INLINE
+AC_TYPE_SIZE_T
+AC_CHECK_HEADER_STDBOOL
+AC_CHECK_FUNCS([sqrt])
+AC_CHECK_FUNCS([pow])
 
 m4_include([m4/ax_cxx_compile_stdcxx_11.m4])
 AX_CXX_COMPILE_STDCXX_11([noext], [mandatory])
