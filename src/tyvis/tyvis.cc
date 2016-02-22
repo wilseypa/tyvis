@@ -17,10 +17,7 @@
 // the file "LGPL", distributed with this archive.
 
 #include <string>
-#include <WarpedMain.h>
-#include <warped.h>
-#include "TyvisPluginLoader.hh"
-#include "VHDLApplication.hh"
+#include <warped.hpp>
 
 using std::string;
 
@@ -32,12 +29,6 @@ main( int argc, char **argv ){
   }
   
   const string fileName( argv[1] );
-  VHDLApplication *app = TyvisPluginLoader::instance().getVHDLApplication( fileName );
-  ASSERT( app != 0 );
-
-  WarpedMain wm( app, fileName );
-  
-  wm.main( argc, argv );
   
   return 0;
 }

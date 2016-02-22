@@ -184,6 +184,7 @@ library_include_HEADERS=  \
 	tyvis/VHDLKernel.hh \
 	tyvis/WaitEvent.hh \
 	tyvis/VHDLProcess.hh \
+	tyvis/SigEvent.hh \
    tyvis/tyvis-config.h   
 #	$(AMS_H_FILES) \
 #	tyvis/_savant_entity_elab.hh \

@@ -21,7 +21,6 @@
 // the file "LGPL", distributed with this archive.
 
 #include "tyvis/tyvis-config.h"
-#include <DeserializerManager.h>
 #include "tyvis/VHDLEvent.hh"
 #include "tyvis/VHDLKernel.hh"
 #include "tyvis/VHDLVTime.hh"
@@ -29,56 +28,13 @@
 /** class for a VHDLProcess to send wait expirations to itself */
 class WaitEvent: public VHDLEvent {
 public:
-  WaitEvent( const VHDLVTime &sendTime, 
-	     const VHDLVTime &receiveTime, 
-	     SimulationObject *sender,
-	     SimulationObject *receiver, 
+  WaitEvent( VHDLVTime &receiveTime, 
+	     std::string& receiver, 
 	     int initWaitId ) : 
-    VHDLEvent( sendTime, receiveTime, sender, receiver ),
+    VHDLEvent( receiveTime, receiver ),
     waitId( initWaitId ){}
 
-  explicit WaitEvent(const WaitEvent *we) : VHDLEvent( we ) {
-    waitId = we->waitId;
-  }
-
   ~WaitEvent() {}
-
-  void serialize( SerializedInstance *serializeInto ) const {
-    VHDLEvent::serialize( serializeInto );
-    serializeInto->addInt( waitId );
-  }
-
-  static Serializable *deserialize( SerializedInstance *si ){
-    VHDLVTime *sendTime = dynamic_cast<VHDLVTime *>(si->getSerializable());
-    VHDLVTime *recvTime = dynamic_cast<VHDLVTime *>(si->getSerializable());
-    unsigned int senderSimManID = si->getUnsigned();
-    unsigned int senderSimObjID = si->getUnsigned();
-    unsigned int receiverSimManID = si->getUnsigned();
-    unsigned int receiverSimObjID = si->getUnsigned();
-    unsigned int eventId = si->getUnsigned();
-    int waitId = si->getInt();
-    
-    ObjectID sender(senderSimObjID, senderSimManID);
-    ObjectID receiver(receiverSimObjID, receiverSimManID);
-
-    return new WaitEvent( *sendTime,
-			  *recvTime,
-			  sender,
-			  receiver,
-			  eventId,
-			  waitId );
-  }
-
-//   WaitEvent& operator=(const WaitEvent& src) {
-//     VHDLEvent::operator=((const VHDLEvent &) src);
-//     waitId = src.waitId;
-
-//     return *this;
-//   }
-
-  virtual void execute( VHDLKernel *onProcess ){
-    onProcess->updateWait( this );
-  }
 
   int getWaitId() const { return waitId; }
 
@@ -89,30 +45,11 @@ public:
   
   const string &getDataType() const { return getWaitEventType(); }
 
-  static void registerDeserializer(){
-    DeserializerManager::instance()->registerDeserializer( getWaitEventType(),
-							   &WaitEvent::deserialize );
-  }
-
   unsigned int getEventSize() const {
     return sizeof(WaitEvent);
   }
-
-protected:
  
 private:
-  /**
-     Constructor used by deserializer.
-  */
-  WaitEvent( const VHDLVTime &sendTime, 
-	     const VHDLVTime &receiveTime, 
-	     const ObjectID &sender,
-	     const ObjectID &receiver, 
-	     unsigned int eventId,
-	     int initWaitId ) : 
-    VHDLEvent( sendTime, receiveTime, sender, receiver, eventId ),
-    waitId( initWaitId ){}
-
   int waitId;
 };
 
