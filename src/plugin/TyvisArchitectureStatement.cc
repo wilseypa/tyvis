@@ -248,7 +248,6 @@ void
 TyvisArchitectureStatement::_publish_cc( published_file &_cc_out, PublishData * ) {
 
   CC_REF( _cc_out, "TyvisArchitectureStatement::_publish_cc" );
-  
   switch(get_kind()) {
   case IIR_COMPONENT_INSTANTIATION_STATEMENT:
     break;

@@ -58,6 +58,7 @@
 #include "PublishData.hh"
 
 extern language_processing_control *lang_proc;
+extern bool verbose_output;
 
 TyvisEntityDeclaration::TyvisEntityDeclaration() {  
   set_generic_clause(new TyvisGenericList());
@@ -125,14 +126,10 @@ void
 TyvisEntityDeclaration::_publish_cc_class( published_file &_cc_out, PublishData *declarations ) {
 
   CC_REF( _cc_out, "TyvisEntityDeclaration::_publish_cc_class" );
-  // define the state for Warped2
-  _cc_out << "#ifndef myVHDLState" << NL() << "#define myVHDLState" << NL()
-          << OS("WARPED_DEFINE_LP_STATE_STRUCT(VHDLState) {")
-	       << "bool state_;" << CS("};")
-          << "#endif\n\n";
-  
+
+  _cc_out.add_include("tyvis/VHDLKernel.hh", true);
   _cc_out << "class " << _get_cc_elaboration_class_name()
-          << " : public warped::LogicalProcess";
+          << " : public VHDLKernel";
   _cc_out << OS(" {")
 	  << "\npublic:" << NL();
   _cc_out << _get_cc_elaboration_class_name() << OS("(");
@@ -150,30 +147,7 @@ TyvisEntityDeclaration::_publish_cc_class( published_file &_cc_out, PublishData 
   }
 
   _cc_out << "~" << _get_cc_elaboration_class_name() << "();" << NL()
-	  << "virtual warped::LPState& getState() override final { return this->state_; }" << NL()
-	  << "virtual std::vector<std::shared_ptr<warped::Event>> assignSignal( const std::string name, const int value, unsigned int delay, unsigned int timestamp ) = 0;" << NL()
-     << "void addLP( const std::string name ) { objects_.push_back(name); }" << NL();
-
-  _cc_out << "// The following members have to be pushed in the objects_ vector" << NL();
-  _get_generic_clause()->_publish_cc_elaborate( _cc_out, declarations );
-  _get_port_clause()->_publish_cc_elaborate( _cc_out, declarations );
-  //Aliases for signal objects are also published
-  _publish_cc_signals( _cc_out, _get_entity_declarative_part(), declarations );
-  _publish_cc_object_pointers( _cc_out, _get_entity_statement_part(), declarations );
-  
-  if (get_generic_clause()->first() != NULL) {
-    _cc_out << "void copyGenericsToGlobals();" << NL();
-  }
-  _get_entity_declarative_part()->_publish_cc_constants( _cc_out, declarations );
-  _cc_out << "// Element state" << NL()
-          << "VHDLState state_;" << NL()
-          << "// map < signal_name, value >" << NL()
-          << "std::map<std::string, int> signals_;" << NL()
-          << "// map < mysignal, vector<pair < subelement, name_in_subelement > > >" << NL()
-          << "std::map<std::string, std::vector<std::pair<std::string, std::string>>> hierarchy_;" << NL()
-          << "// The other LogicalProcesses I know" << NL()
-          << "std::vector<std::string> objects_;" << NL()
-          << CS("};");
+     << CS("};");
 }
 
 void
@@ -372,7 +346,7 @@ TyvisEntityDeclaration::_publish_cc_headerfiles_for_cc( published_file &_cc_out 
 
   CC_REF( _cc_out, "TyvisEntityDeclaration::_publish_cc_headerfiles_for_cc" );
   
-  Tyvis::_publish_cc_include( _cc_out, "tyvis/ObjectBase.hh" );
+  //Tyvis::_publish_cc_include( _cc_out, "tyvis/ObjectBase.hh" );
 
   while (arch_stmt != NULL) {
     //###currently the process name doesn't include its entity and
@@ -410,30 +384,11 @@ TyvisEntityDeclaration::_publish_cc_constructor_with_no_arguments( published_fil
   _cc_out << "const std::string& name"
           << ")";
 
-  bool firstDeclFlag = false;  
-  if( numGenericClause > 0 ) {
-    _cc_out << ":\n    ";
-    _get_generic_clause()->_publish_generic_init( _cc_out, declarations );
-    if( numPortClause > 0 ){
-      _cc_out << ",\n   ";
-      _get_port_clause()->_publish_cc_port_init( _cc_out, declarations );
-    }    
-  }
-  else {
-    if(numPortClause > 0) {
-      _cc_out << ":\n    ";
-      _get_port_clause()->_publish_cc_port_init( _cc_out, declarations );
-    }
-    else {
-      firstDeclFlag = true;
-    }
-  }
-  
-  first = _get_entity_declarative_part()->_publish_cc_constants_init( _cc_out, declarations, first);
-  if(_publish_cc_signal_objects_init( _cc_out, declarations, first ))
-     _cc_out << ",";
-  _cc_out << "LogicalProcess(name)"
+  _cc_out << " :\n"
+          << "VHDLKernel(name)"
           << OS("{");
+  _get_generic_clause()->_publish_generic_init( _cc_out, declarations );
+  _get_port_clause()->_publish_cc_port_init( _cc_out, declarations );
   // before newing the elab guys down the heirarchy copy generics of this
   // entity to the global generic pointers in the entity_decls file
   if (numGenericClause > 0) {
@@ -593,6 +548,8 @@ TyvisEntityDeclaration::_get_entity() {
 
 void 
 TyvisEntityDeclaration::_publish_cc(){
+   if(verbose_output)
+      cout << "We are publishing: " << dynamic_cast<IIRBase_TextLiteral*>(_get_declarator())->convert_to_string() << endl;
   Tyvis *old_node = _get_current_publish_node();
 
   _set_current_publish_name( "" );
@@ -606,7 +563,7 @@ TyvisEntityDeclaration::_publish_cc(){
   _set_current_publish_node( this );
   _set_currently_publishing_unit(ENTITY_DECL);
 
-  Tyvis::_publish_cc_include( header_file, "tyvis/STDTypes.hh" );
+  //Tyvis::_publish_cc_include( header_file, "tyvis/STDTypes.hh" );
 
   _get_context_items()->_publish_cc( header_file, _declarations );
   _get_generic_clause()->_publish_cc_elaborate_as_pointers( header_file, _declarations, FALSE );

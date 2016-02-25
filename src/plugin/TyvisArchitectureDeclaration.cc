@@ -80,6 +80,21 @@ TyvisArchitectureDeclaration::~TyvisArchitectureDeclaration()
   delete get_architecture_statement_part();
 }
 
+void TyvisArchitectureDeclaration::_publish_cc_main(published_file & main_writer ) {
+  static unsigned int num = 0;
+  string myname = _get_cc_elaboration_class_name() + std::to_string(num);
+  _add_current_publish_name( myname );
+  CC_REF( main_writer, "TyvisArchitectureDeclaration::_publish_cc_declarations" );
+  main_writer << _get_cc_elaboration_class_name()
+     << "* " << myname << " = "
+     << "new " << _get_cc_elaboration_class_name()
+     << "( \"" << myname << "\" );" << NL()
+     << "object_pointers.push_back( " << myname << " );" << NL();
+  _get_architecture_statement_part()->_publish_cc_main(main_writer);
+   std::string *current_name = _get_full_current_publish_name();
+  _remove_current_publish_name( );
+}
+
 void 
 TyvisArchitectureDeclaration::_publish_cc(){
   Tyvis* temp = _get_current_publish_node();
@@ -96,7 +111,7 @@ TyvisArchitectureDeclaration::_publish_cc(){
   _set_current_publish_name( "" );
 
   // Check and group component instantiation statements for large designs
-  _group_component_instantiations(_get_architecture_statement_part(), 300);
+  //_group_component_instantiations(_get_architecture_statement_part(), 300);
   
   _publish_cc_declarations( _declarations );
   _publish_cc_makefile_stub();
@@ -126,7 +141,7 @@ TyvisArchitectureDeclaration::_publish_cc_declarations(PublishData *declarations
   CC_REF( header_file, "TyvisArchitectureDeclaration::_publish_cc_declarations" );
   _publish_cc_include_decls( header_file );
   _get_context_items()->_publish_cc( header_file, declarations );
-  Tyvis::_publish_cc_include( header_file, "tyvis/STDTypes.hh" );
+  //Tyvis::_publish_cc_include( header_file, "tyvis/STDTypes.hh" );
 
   CC_REF( header_file, "TyvisArchitectureDeclaration::_publish_cc_declarations" );
   _get_architecture_declarative_part()->_publish_cc( header_file, declarations );
@@ -140,7 +155,7 @@ TyvisArchitectureDeclaration::_publish_cc_declarations(PublishData *declarations
   _publish_cc_include_elab( cc_file );
   _publish_cc_include_decls( cc_file );
   CC_REF( cc_file, "TyvisArchitectureDeclaration::_publish_cc_declarations" );
-  Tyvis::_publish_cc_include( cc_file, "tyvis/VHDLProcess.hh" );
+  //Tyvis::_publish_cc_include( cc_file, "tyvis/VHDLProcess.hh" );
   CC_REF( cc_file, "TyvisArchitectureDeclaration::_publish_cc_declarations" );
   _get_architecture_declarative_part()->_publish_cc_decl( cc_file, declarations );
   CC_REF( cc_file, "TyvisArchitectureDeclaration::_publish_cc_declarations" );
@@ -231,14 +246,14 @@ TyvisArchitectureDeclaration::_publish_cc_headerfile( PublishData *declarations 
 				     _get_cc_elaboration_class_name(),
 				     this );
   CC_REF( header_file, "TyvisArchitectureDeclaration::_publish_cc_headerfile" );
-  Tyvis::_publish_cc_include( header_file, "tyvis/STDTypes.hh" );
+  //Tyvis::_publish_cc_include( header_file, "tyvis/STDTypes.hh" );
   
   if( lang_proc->processing_vhdl_ams() ){
     _publish_cc_ams_includes( header_file );
   }
 
   // Request the Hierarchy.hh for our hierarchy stuff
-  Tyvis::_publish_cc_include( header_file, "tyvis/Hierarchy.hh" );
+  //Tyvis::_publish_cc_include( header_file, "tyvis/Hierarchy.hh" );
 
   // Request AMSType.hh if VHDL-AMS constructs are invoked.
   if( lang_proc->processing_vhdl_ams() ) {
@@ -286,7 +301,7 @@ TyvisArchitectureDeclaration::_publish_cc_class( published_file &_cc_out,
   _cc_out << "~" << _get_cc_elaboration_class_name() << "();\n" << NL()
 	       << "virtual std::vector<std::shared_ptr<warped::Event>> receiveEvent( const warped::Event& ) override;" << NL()
 	       << "virtual std::vector<std::shared_ptr<warped::Event>> initializeLP() override;" << NL()
-	  << "virtual std::vector<std::shared_ptr<warped::Event>> assignSignal( const std::string name, const int value, unsigned int delay, unsigned int timestamp ) override;" << NL();
+	  << "virtual std::vector<std::shared_ptr<warped::Event>> assignSignal( const std::string& name, int value, unsigned int delay, const VTime& timestamp ) override;" << NL();
 
   if( lang_proc->processing_vhdl_ams() ){
     _publish_cc_ams_objects( _cc_out, declarations );
@@ -341,7 +356,7 @@ TyvisArchitectureDeclaration::_publish_cc_ccfile(PublishData *declarations, Publ
 			     _get_cc_elaboration_class_name(),
 			     this );
   CC_REF( cc_file, "TyvisArchitectureDeclaration::_publish_cc_ccfile" );
-  Tyvis::_publish_cc_include( cc_file, "tyvis/SourceBase.hh" );
+  //Tyvis::_publish_cc_include( cc_file, "tyvis/SourceBase.hh" );
   Tyvis::_publish_cc_include( cc_file, "cstdarg", true );
   _publish_cc_include_elab( cc_file );
 
@@ -454,25 +469,10 @@ TyvisArchitectureDeclaration::_publish_cc_constructor_with_no_arguments( publish
   CC_REF( _cc_out, "TyvisArchitectureDeclaration::_publish_cc_constructor_with_no_arguments" );
  
   _cc_out << _get_cc_elaboration_class_name() << "::"
-	  << _get_cc_elaboration_class_name() << OS("( ");
-  noOfUnconstrainedPorts = 
-    _get_entity()->_get_port_clause()->_publish_cc_unconstrained_ports( _cc_out, declarations, TRUE, TRUE, FALSE);
-  _cc_out << CS(")");
-  
-  if (noOfUnconstrainedPorts > 0) {
-    // Have to pass the parameters to the entity .ie. parent class...
-    _cc_out << ":" << NL();
-    _cc_out << OS(_get_entity()->_get_cc_elaboration_class_name() + "(");
-    _get_entity()->_get_port_clause()->_publish_cc_unconstrained_ports( _cc_out, declarations, FALSE, TRUE, FALSE );
-    _cc_out << CS(")");
-  }
-  
-  _publish_cc_ams_objects_init(_cc_out, firstDeclFlag, declarations, arch_declarations);
-
-  // Initialize all the type info structures first here...
-  firstDeclFlag = _get_architecture_declarative_part()->_publish_cc_constant_definitions( _cc_out, declarations, firstDeclFlag);
-  _publish_cc_signal_objects_init( _cc_out, declarations, firstDeclFlag );
-  _cc_out << OS("{");
+	  << _get_cc_elaboration_class_name() << OS("(")
+	  << "const std::string& name ) :" << NL()
+     << _get_entity()->_get_cc_elaboration_class_name() + "( name )"
+     << " {" << NL();
   _publish_cc_ams_form_global_quantity_list( _cc_out, declarations );
   _cc_out.insert_comment( "all of the global constants..." );
   _get_architecture_declarative_part()->_publish_cc_global_constants_assignments( _cc_out, declarations );
@@ -480,7 +480,7 @@ TyvisArchitectureDeclaration::_publish_cc_constructor_with_no_arguments( publish
   _get_architecture_declarative_part()->_publish_cc_file_objects_init( _cc_out, declarations );
   _cc_out.insert_comment( "all of the object pointers..." );
   _publish_cc_object_pointers_init( _cc_out, declarations );
-  _cc_out << CS("}");
+  _cc_out << CS("}\n");
 }
 
 void
@@ -550,6 +550,10 @@ TyvisArchitectureDeclaration::_publish_cc_instantiate( published_file &_cc_out, 
 	       << OS( _get_cc_elaboration_class_name() + "::initializeLP(){")
           << "std::cout << name_ << \": initialization\" << std::endl;" << NL()
           << "std::vector<std::shared_ptr<warped::Event>> response_events;" << NL()
+          << OS("for ( auto it = hierarchy_.begin(); it != hierarchy_.end(); it++) {")
+          << "std::cout << name_ << \": send a message to \" << name_ << \" to initialize the signal \" << (*it).first << std::endl;" << NL()
+          << "response_events.emplace_back(new SigEvent { name_, 0, (*it).first, VTime::getZero() });"
+          << CS("}\n")
           << "return response_events;"
           << CS("}\n");
 }
@@ -557,16 +561,19 @@ TyvisArchitectureDeclaration::_publish_cc_instantiate( published_file &_cc_out, 
 void
 TyvisArchitectureDeclaration::_publish_cc_createNetInfo( published_file &_cc_out, PublishData *declarations ) {
   CC_REF( _cc_out, "TyvisArchitectureDeclaration::_publish_cc_createNetInfo" );
+  _cc_out.add_include("tyvis/SigEvent.hh", true);
+  _cc_out.add_include("cassert", true);
+  _cc_out.add_include("iostream", true);
   // AssignSignal method
   _cc_out << "std::vector<std::shared_ptr<warped::Event>>" << NL()
-	       << OS( _get_cc_elaboration_class_name() + "::AssignSignal( const std::string name, const int value, const unsigned int delay, const unsigned int timestamp){")
+	       << OS( _get_cc_elaboration_class_name() + "::assignSignal( const std::string& name, int value, unsigned int delay, const VTime& timestamp){")
           << "std::vector<std::shared_ptr<warped::Event>> response_events;" << NL()
           << "assert( signals_.find(name) != signals_.end() );" << NL()
           << OS("if ( delay == 0 ) {")
           << "signals_[name] = value;" << NL()
-          << OS("if ( hierarchy.find(name) != hierarchy.end() ) {")
-          << OS("for ( auto it = hierarchy.find(name)->second.begin(); it != hierarchy.find(name)->second.end(); it++) {")
-          << "std::cout << name_ << \": send a message to \" << (*it).first << \" because the signal \" << (*it).second << \" has changed\" std::endl;" << NL()
+          << OS("if ( hierarchy_.find(name) != hierarchy_.end() ) {")
+          << OS("for ( auto it = hierarchy_.find(name)->second.begin(); it != hierarchy_.find(name)->second.end(); it++) {")
+          << "std::cout << name_ << \": send a message to \" << (*it).first << \" because the signal \" << (*it).second << \" has changed\" << std::endl;" << NL()
           << "response_events.emplace_back(new SigEvent { (*it).first, value, (*it).second, timestamp });"
           << CS("}")
           << CS("}")
@@ -580,10 +587,10 @@ TyvisArchitectureDeclaration::_publish_cc_createNetInfo( published_file &_cc_out
   // AssignSignal method
   _cc_out << "std::vector<std::shared_ptr<warped::Event>>" << NL()
 	       << OS( _get_cc_elaboration_class_name() + "::receiveEvent( const warped::Event& event ){")
-          << "std::cout << name_ << \": received a message from \" << event.sender_name_" << NL()
-          << "\" at time \" << std::to_string(event.timestamp()) << \".\" << std::endl;" << NL()
           << "const SigEvent sign_event = static_cast<const SigEvent&>(event);" << NL()
-          << "std::vector<std::shared_ptr<warped::Event>> response_events = AssignSignal(sign_event.signalName(), sign_event.Value(), 0, sign_event.timestamp());" << NL()
+          << "std::cout << name_ << \": received a message from \" << event.sender_name_" << NL()
+          << "<< \" at time \" << event.timestamp() << \" because the signal \" << sign_event.signalName() << \" has changed.\" << std::endl;" << NL()
+          << "std::vector<std::shared_ptr<warped::Event>> response_events = assignSignal(sign_event.signalName(), sign_event.getValue(), 0, sign_event.timestamp());" << NL()
           << "return response_events;"
           << CS("}");
 }

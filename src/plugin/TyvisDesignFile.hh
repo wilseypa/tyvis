@@ -63,7 +63,7 @@ public:
   void _publish_cc_library_data( published_file &_cc_out );
 
   // This is a temporary function, eventually will be chaned to _publish_cc_main
-  void _publish_cc_main();
+  void _publish_cc_main(published_file&) override;
 
   const string _get_top_level_design_unit_name();
 

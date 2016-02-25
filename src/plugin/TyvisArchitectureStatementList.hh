@@ -42,6 +42,7 @@ public:
   /** Publish the ams function's body and prototype */
   void _publish_cc_ams_function_body(published_file &);
   void _publish_cc_ams_function_prototype(published_file &);
+  void _publish_cc_main( published_file & ) override;
 
   void _publish_cc_createNetInfo( published_file &_cc_out, PublishData *declarations );
 

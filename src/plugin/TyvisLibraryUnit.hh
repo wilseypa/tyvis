@@ -26,6 +26,7 @@
 //---------------------------------------------------------------------------
 
 #include "TyvisDeclaration.hh"
+#include "published_file.hh"
 #include "savant/IIRBase_LibraryUnit.hh"
 
 class TyvisLibraryUnit : public virtual TyvisDeclaration,
@@ -69,6 +70,7 @@ public:
   */
   virtual void _publish_cc( ) = 0;
 
+  virtual void _publish_cc_main( published_file& ) {};
   /**
      Returns the library declaration that this unit is declared in.  Should
      never be NULL.  

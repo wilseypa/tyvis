@@ -48,7 +48,6 @@ TyvisArchitectureStatementList::_publish_cc( published_file &_cc_out,
   Tyvis                              *_old_publish_node      = _get_current_publish_node();
 
   CC_REF( _cc_out, "TyvisArchitectureStatementList::_publish_cc" );
-
   for (node = dynamic_cast<TyvisArchitectureStatement *>(first()); 
        node != NULL; 
        node = dynamic_cast<TyvisArchitectureStatement *>(successor(node))) {
@@ -60,6 +59,18 @@ TyvisArchitectureStatementList::_publish_cc( published_file &_cc_out,
     }
     node->set_declarative_region( _old_publish_node );
     node->_publish_cc( _cc_out, declarations );
+  }
+}
+
+void 
+TyvisArchitectureStatementList::_publish_cc_main( published_file &_cc_out) {
+  TyvisArchitectureStatement        *node                   = NULL;
+
+  CC_REF( _cc_out, "TyvisArchitectureStatementList::_publish_cc" );
+  for (node = dynamic_cast<TyvisArchitectureStatement *>(first()); 
+       node != NULL; 
+       node = dynamic_cast<TyvisArchitectureStatement *>(successor(node))) {
+    node->_publish_cc_main( _cc_out );
   }
 }
 

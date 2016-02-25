@@ -291,6 +291,11 @@ public:
   virtual void _publish_cc_ams_function_call_in_simult_stmt(published_file & ){
     // do nothing
   }
+  /**
+    * Used to create the circuit hierarchy. Empty implementation because not every node needs
+    * an implementation.
+    */
+  virtual void _publish_cc_main(published_file & ){}
 
   /** This is the default behaviour for _publish_cc_headerfiles_for_cc( published_file &_cc_out ).
       It has to be called explicitly.  It's defined here as both
@@ -491,6 +496,10 @@ void _set_aggregate_iterator_subtype( TyvisTypeDefinition * );
 
 string &_get_current_publish_name();
 void _set_current_publish_name( const string );
+void _remove_current_publish_name( const string );
+string * _get_full_current_publish_name();
+void _add_current_publish_name( string new_name );
+void _remove_current_publish_name();
 
 int _get_aggregate_iterator_counter();
 void _set_aggregate_iterator_counter( int );

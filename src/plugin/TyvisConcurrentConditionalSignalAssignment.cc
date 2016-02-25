@@ -41,7 +41,13 @@
 #include "TyvisStringLiteral.hh"
 #include "TyvisSignalDeclaration.hh"
 #include "TyvisStringLiteral.hh"
+#include "TyvisDyadicOperator.hh"
+#include "TyvisSignalInterfaceDeclaration.hh"
+#include "TyvisLibraryDeclaration.hh"
 
+#include "published_header_file.hh"
+#include "published_cc_file.hh"
+#include "savant/IRKind.hh"
 #include "savant/StandardPackage.hh"
 #include "savant/error_func.hh"
 
@@ -50,13 +56,147 @@ TyvisConcurrentConditionalSignalAssignment::TyvisConcurrentConditionalSignalAssi
   set_conditional_waveforms(new TyvisConditionalWaveformList());
 }
 
+IIR_Boolean
+TyvisConcurrentConditionalSignalAssignment::_is_simultaneous_statement() {
+  return TRUE;
+}
+
 TyvisConcurrentConditionalSignalAssignment::~TyvisConcurrentConditionalSignalAssignment() {
   //Release the list memory
   delete get_conditional_waveforms();
 }
 
+void
+TyvisConcurrentConditionalSignalAssignment::_publish_cc_main(published_file& main_printer) {
+   static int num = 0;
+   std::string *current_name = _get_full_current_publish_name();
+   std::string myname = *current_name + "logicGate" + std::to_string(num++);
+   _add_current_publish_name( myname );
+   // FIXME: Only simple assignments are covered for the time being.
+   assert(_get_conditional_waveforms()->num_elements() == 1);
+   assert(_get_conditional_waveforms()->first()->get_waveform()->num_elements() == 1);
+  TyvisDyadicOperator* dyaop = dynamic_cast<TyvisDyadicOperator*>(_get_conditional_waveforms()->first()->get_waveform()->first()->get_value());
+  assert(dyaop);
+  switch(dyaop->get_kind()) {
+     case IIR_XNOR_OPERATOR:
+        main_printer.add_include("XNor.hpp", false);
+        main_printer << "XNor * " << myname << " = new XNor( \"" << myname << "\" );" << NL();
+        main_printer << "object_pointers.push_back( " << myname << " );" << NL();
+        break;
+     default:
+        cerr << "ERROR! Dyadic operation " << dyaop->get_kind_text()
+             << " is not supported for the moment\n";
+        abort();
+        break;
+  }
+   const std::string left_operand = dynamic_cast<TyvisSignalInterfaceDeclaration*>(dynamic_cast<TyvisDyadicOperator*>(_get_conditional_waveforms()->first()->get_waveform()->first()->get_value())->get_left_operand())->get_declarator()->get_text();
+   const std::string right_operand = dynamic_cast<TyvisSignalInterfaceDeclaration*>(dynamic_cast<TyvisDyadicOperator*>(_get_conditional_waveforms()->first()->get_waveform()->first()->get_value())->get_right_operand())->get_declarator()->get_text();
+   const std::string target = _get_target()->get_declarator()->get_text();
+   main_printer << myname << "->addSignal( \"" << left_operand << "\");" << NL();
+   main_printer << myname << "->addSignal( \"" << right_operand << "\");" << NL();
+   main_printer << myname << "->addSignal( \"" << target << "\");" << NL();
+   main_printer << myname << "->addOutput( \"" << target << "\"," << NL()
+                << "\"" << *current_name << "\"," << NL()
+                << " \"" << target << "\" );" << NL();
+   main_printer << *current_name << "->addOutput( \"" << right_operand << "\"," << NL()
+                << "\"" << myname << "\"," << NL()
+                << " \"" << right_operand << "\");" << NL();
+   main_printer << *current_name << "->addOutput( \"" << left_operand << "\"," << NL()
+                << "\"" << myname << "\"," << NL()
+                << " \"" << left_operand << "\");" << NL();
+  _remove_current_publish_name( );
+   delete current_name;
+}
+
+void 
+TyvisConcurrentConditionalSignalAssignment::_publish_cc( published_file &, PublishData * ) {
+  // Include the declarative region to which this process belongs
+  // FIXME: Only simple assignments are covered for the time being.
+  assert(_get_conditional_waveforms()->num_elements() == 1);
+  assert(_get_conditional_waveforms()->first()->get_waveform()->num_elements() == 1);
+  cerr << "Publishing concurrent assignment.\n";
+  
+  TyvisDyadicOperator* dyaop = dynamic_cast<TyvisDyadicOperator*>(_get_conditional_waveforms()->first()->get_waveform()->first()->get_value());
+  assert(dyaop);
+  switch(dyaop->get_kind()) {
+     case IIR_XNOR_OPERATOR:
+        break;
+     default:
+        cerr << "ERROR! Dyadic operation " << dyaop->get_kind_text()
+             << " is not supported for the moment\n";
+        abort();
+        break;
+  }
+
+  published_header_file _cc_out( _get_work_library()->get_path_to_directory(), 
+				     "XNor",
+				     this );
+  _cc_out.add_include("tyvis/VHDLKernel.hh", true);
+  CC_REF( _cc_out, 
+        "TyvisConcurrentConditionalSignalAssignment::_publish_cc()" );
+  _cc_out << "class XNor : public VHDLKernel {\n"
+          << OS("public:");
+
+  // Publish the constructor
+  _cc_out << "XNor( const std::string& name );" << NL();
+
+  // The destructor.
+  _cc_out << "~XNor();\n" << NL()
+	       << "virtual std::vector<std::shared_ptr<warped::Event>> receiveEvent( const warped::Event& ) override;" << NL()
+	       << "virtual std::vector<std::shared_ptr<warped::Event>> initializeLP() override;\n" << NL()
+	       << "virtual std::vector<std::shared_ptr<warped::Event>> assignSignal( const std::string& name, int value, unsigned int delay, const VTime& timestamp ) override;\n" << NL()
+     << CS("};");
+  //Tyvis::_publish_cc_include( _cc_out, "header.hh" );
+  
+  published_cc_file _imp_out( _get_work_library()->get_path_to_directory(), 
+				     "XNor",
+				     this );
+  CC_REF( _imp_out, 
+        "TyvisConcurrentConditionalSignalAssignment::_publish_cc()" );
+
+  _imp_out.add_include("XNor.hpp", false);
+  _imp_out.add_include("tyvis/SigEvent.hh", true);
+  _imp_out.add_include("cassert", true);
+  // Publish the constructor
+  _imp_out << "XNor::XNor( const std::string& name ) : VHDLKernel(name) {}" << NL();
+
+  // The destructor.
+  _imp_out << "XNor::~XNor() {}\n" << NL()
+	       << "std::vector<std::shared_ptr<warped::Event>>\n"
+          << OS("XNor::receiveEvent( const warped::Event& event ) {")
+          << "std::cout << name_ << \": received a message from \" << event.sender_name_" << NL()
+          << "<< \" at time \" << event.timestamp() << \".\" << std::endl;" << NL()
+          << "const SigEvent sign_event = static_cast<const SigEvent&>(event);" << NL()
+          << "std::vector<std::shared_ptr<warped::Event>> response_events = assignSignal(sign_event.signalName(), sign_event.getValue(), 0, sign_event.timestamp());" << NL()
+          << "int retval = 0;" << NL()
+          << OS("for ( auto it = signals_.begin(); it != signals_.end(); it++) {")
+          << "retval++;" << NL()
+          << CS("}\n")
+          << "response_events.emplace_back(new SigEvent { (*hierarchy_.begin()->second.begin()).first, (retval % 2) ? 0 : 1, (*hierarchy_.begin()->second.begin()).second, sign_event.timestamp() });" << NL()
+          << "return response_events;" << NL()
+          << CS("};\n")
+	       << "std::vector<std::shared_ptr<warped::Event>>\n"
+	       << OS("XNor::initializeLP() {")
+          << "std::cout << name_ << \": initialization\" << std::endl;" << NL()
+          << "std::vector<std::shared_ptr<warped::Event>> response_events;" << NL()
+          << "return response_events;"
+          << CS("};\n")
+          << "std::vector<std::shared_ptr<warped::Event>>\n"
+          << OS("XNor::assignSignal( const std::string& name, int value, unsigned int delay, const VTime& timestamp ) {")
+          << "std::vector<std::shared_ptr<warped::Event>> response_events;" << NL()
+          << "assert( signals_.find(name) != signals_.end() );" << NL()
+          << "signals_[name] = value;" << NL()
+          << "return response_events;"
+          << CS("};");
+  //Tyvis::_publish_cc_include( _imp_out, "header.hh" );
+  // Include all the stuff in the declarative part of process in this file
+  //get_process_declarative_part()->_publish_cc( process_decls_header_file, declarations );
+}
+
 Tyvis * 
 TyvisConcurrentConditionalSignalAssignment::_transmute() {
+  return this;
+  /*
   //### yet to take care of guarded signal assignment
   TyvisProcessStatement* pstmt = new TyvisProcessStatement;
   TyvisWaitStatement* wstmt = new TyvisWaitStatement;
@@ -203,7 +343,7 @@ TyvisConcurrentConditionalSignalAssignment::_transmute() {
   }
   wstmt->_get_sensitivity_list()->_add_signals_to_sensitivity_list(&sensitivity_list);
   pstmt->get_process_statement_part()->append(wstmt);  
-  return pstmt;
+  return pstmt;*/
 }
 
 void 

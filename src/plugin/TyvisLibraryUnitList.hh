@@ -26,6 +26,7 @@
 //---------------------------------------------------------------------------
 
 #include "TyvisDeclarationList.hh"
+#include "published_file.hh"
 #include "savant/IIRBase_LibraryUnitList.hh"
 
 class TyvisLibraryUnitList : public virtual TyvisDeclarationList, public virtual IIRBase_LibraryUnitList {
@@ -36,6 +37,9 @@ public:
 
   /** Publish elaboration files. */
   void _publish_cc_elaborate();
+
+  /** Publish the circuit construction in the main **/
+  void _publish_cc_main( published_file& ) override;
 
 protected:
 

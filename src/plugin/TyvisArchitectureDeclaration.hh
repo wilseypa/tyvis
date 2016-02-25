@@ -49,7 +49,10 @@ public:
   void _publish_cc_implicit_signals( published_file &_cc_out,
 				     TyvisDeclarationList *,
 				     PublishData *declarations);
+  /** Baiscally it publishes the include of the hh file in the cc file. */
   void _publish_cc_include( published_file &_cc_out );
+  
+  virtual void _publish_cc_main(published_file & ) override;
 
   /** Publish VHDL-AMS specific header files. */
   void _publish_cc_ams_includes(published_file &);
