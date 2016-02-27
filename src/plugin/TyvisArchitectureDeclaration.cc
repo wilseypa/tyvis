@@ -114,7 +114,7 @@ TyvisArchitectureDeclaration::_publish_cc(){
   //_group_component_instantiations(_get_architecture_statement_part(), 300);
   
   _publish_cc_declarations( _declarations );
-  _publish_cc_makefile_stub();
+  //_publish_cc_makefile_stub();
 
   _set_current_publish_name( old_current_publish_name );
   _set_current_publish_node( temp );
@@ -189,9 +189,9 @@ void
 TyvisArchitectureDeclaration::_publish_cc_makefile_stub(){
   ASSERT( _get_entity() != 0 );
   // Dump the entity's Makefile stub
-  _get_entity()->_publish_cc_makefile_stub();
+  //_get_entity()->_publish_cc_makefile_stub();
   // Dump the architecture's Makefile stub
-  TyvisLibraryUnit::_publish_cc_makefile_stub();
+  //TyvisLibraryUnit::_publish_cc_makefile_stub();
 }  
 
 void
