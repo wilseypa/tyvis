@@ -34,8 +34,8 @@
 #include "TyvisPackageDeclaration.hh"
 #include "TyvisSignalDeclaration.hh"
 #include "TyvisSimpleSimultaneousStatement.hh"
-
 #include "savant/error_func.hh"
+#include "savant/IIR_AssociationList.hh"
 #include "savant/resolution_func.hh"
 #include "savant/StandardPackage.hh"
 #include "published_file.hh"

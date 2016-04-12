@@ -1,4 +1,3 @@
-
 // Copyright (c) 1996-2003 The University of Cincinnati.
 // All rights reserved.
 
@@ -54,15 +53,16 @@
 #include "TyvisTypeDefinition.hh"
 #include "TyvisUseClause.hh"
 #include "TyvisWaitStatement.hh"
-
 #include "PublishData.hh"
-#include "savant/error_func.hh"
-#include "savant/resolution_func.hh"
 #include "published_header_file.hh"
 #include "published_cc_file.hh"
-#include <sstream>
+// From savant
+#include "savant/error_func.hh"
+#include "savant/resolution_func.hh"
 #include "savant/language_processing_control.hh"
-#include <cstdlib> // for rand()
+#include "savant/IIR_AssociationList.hh"
+#include <sstream>
+#include <cstdlib>
 
 extern language_processing_control *lang_proc;
 
