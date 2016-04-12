@@ -574,14 +574,11 @@ void _set_current_process_statement( TyvisProcessStatement * );
 	Generates reference according to: \
 	<Tyvisclass>::<function>(<line#>) on <userfile>(userline#)	*/
 
-#ifndef CC_REF
-#if (!defined(NO_DEVELOPER_ASSERTIONS) && !defined(NO_GENERATE_CC_REFERENCES))
+#ifndef NDEBUG
 #define	CC_REF( file, string ) _publish_cc_reference_info( file, string, __LINE__ )
-#else /* CC_REF */
+#else /* NDEBUG */
 #define CC_REF( file, string )
-#endif
- 
-#endif /* CC_REF */
+#endif /* NDEBUG */
 
 published_file &
 operator<<(published_file &pf, IIR &is );
