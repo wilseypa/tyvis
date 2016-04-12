@@ -1,3 +1,5 @@
+AM_CXXFLAGS = -g -O0 -Wall -Wextra
+
 AM_CPPFLAGS =$(GLOBALCPPFLAGS) @CPPFLAGS@  \
         -I$(top_srcdir)/VHDLKernel \
         -I$(top_srcdir)/VHDLKernel/standard \

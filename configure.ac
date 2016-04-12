@@ -11,6 +11,9 @@ AC_CONFIG_HEADERS( [src/tyvis/tyvis-config.h:src/tyvis/tyvis-config.h.in] )
 AC_LANG([C++])
 AC_SUBST(TYVIS_VERSION,[2.0-pre031216])
 
+: ${CXXFLAGS=""}
+: ${CFLAGS=""}
+
 AC_ARG_ENABLE( [vhdl-ams], 
 	AC_HELP_STRING([--enable-vhdl-ams], [Enable VHDL AMS support in tyvis build]),
 	AC_DEFINE( VHDL_AMS, 1, [Did the user ask for VHDL AMS support?] )
