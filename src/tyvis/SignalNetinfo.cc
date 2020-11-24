@@ -30,7 +30,7 @@
 #include "VCD.hh"
 #include <iostream>
 
-static const bool debug = false;
+static const bool mydebug = false;
 
 SignalNetinfo::SignalNetinfo( const TypeInfo &initTypeInfo,
 			      const string &signalName ) :
@@ -42,7 +42,7 @@ SignalNetinfo::SignalNetinfo( const TypeInfo &initTypeInfo,
   driverAddedFlag( false ),
   source( 0 ),
   sourceBaseDeleteFlag( false ){
-  if( debug ){
+  if( mydebug ){
     cerr << signalName << " constructed, id = " << id << endl;
   }
 }
@@ -54,7 +54,7 @@ SignalNetinfo::SignalNetinfo( const SignalNetinfo &sigIn,
   driverAddedFlag( false ),
   source( 0 ),
   sourceBaseDeleteFlag( false ) {
-  if( debug ){
+  if( mydebug ){
     cerr << endl << "Slice subset of SignalNetinfo constructed, id = " << id << endl;
     tiIn.debugPrint(cerr);
   }
@@ -75,7 +75,7 @@ SignalNetinfo::SignalNetinfo() :
   driverAddedFlag( false ),
   source( 0 ),
   sourceBaseDeleteFlag( false ){
-  if( debug ){
+  if( mydebug ){
     cerr << "anonymous SignNetinfo constructed, id = " << id << endl;
   }
 }
@@ -215,7 +215,7 @@ SignalNetinfo::addToFanOut( VHDLKernel *fanOutTo ){
 
 SignalNetinfo &
 SignalNetinfo::addToFanOut( const string &processName, int destSigId ){
-  if( debug ){
+  if( mydebug ){
     cerr << getName() << "::addToFanout(" << processName << ", " 
 	 << destSigId << ") called!" << endl;
   }

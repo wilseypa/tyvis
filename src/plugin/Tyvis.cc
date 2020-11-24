@@ -55,7 +55,7 @@
 #include "savant/set.hh"
 #include "savant/resolution_func.hh"
 #include "savant/StandardPackage.hh"
-#include <clutils/StringUtilities.h>
+#include <StringUtilities.h>
 #include <cstring>
 #include <set>
 #include <sstream>
@@ -477,6 +477,7 @@ Tyvis::_publish_cc_destructor( published_file &_cc_out,
       break;
     case IIR_SIMPLE_SIMULTANEOUS_STATEMENT:
     case IIR_SIMULTANEOUS_IF_STATEMENT:
+    case IIR_CONCURRENT_CONDITIONAL_SIGNAL_ASSIGNMENT:
       // No need to do anything for this case
       break;
     default:
@@ -834,6 +835,31 @@ string &_get_current_publish_name(){
 }
 void _set_current_publish_name( string new_name ){
   _get_current_publish_name() = new_name;
+}
+
+/**
+ * The following 3 functions are used only in the main building
+ * in order to give unique name to objects
+**/
+static std::vector<string> publish_name_list;
+string * _get_full_current_publish_name(){
+  string* name = new std::string();
+  for(auto it = publish_name_list.begin(); it != publish_name_list.end(); it++) {
+     ASSERT(!(*it).empty());
+     name->append(*it);
+  }
+  ASSERT(!name->empty());
+  return name;
+}
+void _add_current_publish_name( string new_name ){
+   ASSERT(!new_name.empty());
+   publish_name_list.push_back(new_name);
+}
+
+void _remove_current_publish_name( ){
+   if(!publish_name_list.empty()) {
+      publish_name_list.pop_back();
+   }
 }
 
 void _set_aggregate_iterator_counter( int new_counter ){

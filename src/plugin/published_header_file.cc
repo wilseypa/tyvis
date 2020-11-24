@@ -43,7 +43,7 @@ published_header_file::~published_header_file(){
 
 const string 
 published_header_file::get_file_suffix(){
-  static const string suffix = ".hh";
+  static const string suffix = ".hpp";
   return suffix;
 }
 
@@ -57,11 +57,11 @@ published_header_file::publish_headers( ofstream &to_file ){
     file.
   */
   if( get_mode() & ios::app ){
-    to_file << "#undef " << base_name << "_hh\n";
+    to_file << "#undef " << base_name << "_HPP\n";
   }
 
-  to_file << "#ifndef " << base_name << "_hh\n"
-	  << "#define " << base_name << "_hh\n";
+  to_file << "#ifndef " << base_name << "_HPP\n"
+	  << "#define " << base_name << "_HPP\n";
 }
 
 void 

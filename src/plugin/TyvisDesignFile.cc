@@ -26,7 +26,7 @@
 #include "TyvisIdentifier.hh"
 #include "TyvisLibraryDeclaration.hh"
 #include "TyvisLibraryUnitList.hh"
-#include "savant/scram.hh"
+#include <savant/generic_parser.hh>
 #include "savant/set.hh"
 #include "published_makefile.hh"
 #include "published_cc_file.hh"
@@ -50,16 +50,24 @@ TyvisDesignFile::~TyvisDesignFile() {
 
 void 
 TyvisDesignFile::_publish_cc( bool last_file_this_run ) {
+   cout << "we are publishing: " << dynamic_cast<IIR_Identifier*>(_get_name())->convert_to_string() << endl;
   _set_currently_publishing_unit(Tyvis::NONE);
 
+  cerr << dynamic_cast<IIR_Identifier*>(this->_get_name())->convert_to_string() << endl;
   _get_library_units()->_publish_cc();
 
   // We're assuming that the last file this run is the top level.
-  _publish_cc_makefile( last_file_this_run );
+  // this procedure publish the makefile. Pointless for the moment.
+  //_publish_cc_makefile( last_file_this_run );
 
   _get_library_units()->_publish_cc_elaborate();
-  if ( design_library_name == "" ){
-    _publish_cc_main();
+  if ( design_library_name.empty() ){
+     assert(_get_work_library());
+     assert(!_get_work_library()->get_path_to_directory().empty());
+     published_cc_file cc_file( _get_work_library()->get_path_to_directory(),
+			     "main",
+			     this );
+     _publish_cc_main(cc_file);
   }
 }
 
@@ -174,33 +182,29 @@ TyvisDesignFile::_publish_cc_makefile( bool top_level ) {
 }
 
 void
-TyvisDesignFile::_publish_cc_main(){
+TyvisDesignFile::_publish_cc_main(published_file& cc_file){
   
-  //Lot of work needed in this function
-  published_cc_file cc_file( _get_work_library()->get_path_to_directory(),
-			     "main",
-			     this );
   CC_REF( cc_file, "TyvisDesignFile::_publish_cc_main" );
-
-  _publish_cc_include( cc_file, _get_top_level_design_unit_name() + ".hh" );
-  _publish_cc_include( cc_file, "warped/WarpedMain.h", true );
-  _publish_cc_include( cc_file, "tyvis/VHDLApplication.hh", true );
-  if (lang_proc->processing_vhdl_ams()) {
-    _publish_cc_include( cc_file, "tyvis/AMSApplication.hh", true);
-  }
+  _publish_cc_include( cc_file, _get_top_level_design_unit_name() + ".hpp" );
+  _publish_cc_include( cc_file, "warped.hpp", true );
+  _publish_cc_include( cc_file, "tclap/ValueArg.h", true );
+  //_publish_cc_include( cc_file, "tyvis/VHDLApplication.hh", true );
+  //if (lang_proc->processing_vhdl_ams()) {
+  //  _publish_cc_include( cc_file, "tyvis/AMSApplication.hh", true);
+  //}
   
   cc_file << "int" << NL()
 	  << OS("main( int argc, char **argv ){")
-	  << OS("WarpedMain wm(");
-  if ( lang_proc->processing_vhdl_ams() ){
-    cc_file << "new AMSApplication( new " << _get_top_level_design_unit_name() << " )";
-  }
-  else {
-    cc_file << "new VHDLApplication( new " << _get_top_level_design_unit_name() << " )";
-  }
-  cc_file << CS(");")
-	  << "wm.main( argc, argv );" << NL()
-	  << CS("}");
+     << "// In this vector you can add custom parameters" << NL()
+	  << "std::vector<TCLAP::Arg*> args;" << NL()
+	  << OS("warped::Simulation sim {")
+     << "\"Digital Simulation\", argc, argv, args"
+	  << CS("};")
+     // TODO: circuit constructor
+	  << "std::vector<warped::LogicalProcess*> object_pointers;" << NL();
+     _get_library_units()->_publish_cc_main(cc_file);
+  cc_file << "sim.simulate(object_pointers);"
+     << CS("}");
 }
 
 void

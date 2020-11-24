@@ -21,54 +21,38 @@
 // the file "LGPL", distributed with this archive.
 
 #include "tyvis/tyvis-config.h"
-#include "tyvis/VHDLVTime.hh"
-#include <warped/DefaultEvent.h>
-#include <warped/SerializedInstance.h>
-#include "tyvis/ArrayInfo.hh"
-
-class VHDLKernel;
-//#include "tyvis/vhdl.hh"
+#include <Event.hpp>
+#include <VTime.hpp>
+#include <iostream>
 
 // this the base class that VHDL sends around
-class VHDLEvent: public DefaultEvent {
+class VHDLEvent: public warped::Event {
 public:
-  VHDLEvent( const VHDLVTime &sendTime,
-	     const VHDLVTime &receiveTime,
-	     SimulationObject *sender,
-	     SimulationObject *receiver ) : 
-    DefaultEvent( sendTime, receiveTime, sender, receiver ){}
-  
-  explicit VHDLEvent(const VHDLEvent *v) : DefaultEvent( v->getSendTime(),
-							 v->getReceiveTime(),
-							 v->getSender(),
-							 v->getReceiver(),
-                                                         v->getEventId() ){}
+  VHDLEvent( const VTime& receivetime,
+	     std::string receiver_name,
+	     warped::EventType type = warped::EventType::POSITIVE) :
+     ts_(&receivetime),
+     receiver_name_(receiver_name),
+     type_(type) {}
+
+  virtual const std::string& receiverName() const override final { return receiver_name_; }
+  virtual const VTime& timestamp() const override final { return *ts_; }
   
   ~VHDLEvent() {}
   
-  void serialize( SerializedInstance *serializeInto ) const {
-    Event::serialize( serializeInto );
-  }
-  
-  virtual void execute( VHDLKernel *onProcess ) = 0;
-
-  bool eventCompare(const Event* event) {
-    return (getReceiveTime() == event->getReceiveTime());
-  }
-  
-  virtual bool isCancelTransactionEvent() const { return false; }
-  virtual bool isSigEvent() const { return false; }
-
 protected:
-  /** Constructor used by deserializers. */
-  VHDLEvent( const VHDLVTime &sendTime,
-	     const VHDLVTime &receiveTime,
-	     const ObjectID &sender,
-	     const ObjectID &receiver,
-	     unsigned int eventId ) : 
-    DefaultEvent( sendTime, receiveTime, sender, receiver, eventId ){}
 
 private:
+  std::string receiver_name_;
+  const VTime* ts_;
+  warped::EventType type_;
 };
 
+inline std::ostream&
+operator<<(std::ostream& os, const VHDLEvent& s) {
+  os << "\ns.timestamp(): " << s.timestamp()
+     << "\ns.receiverName(): " << s.receiverName() << "\n";
+  
+  return os;
+}
 #endif

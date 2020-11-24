@@ -49,9 +49,6 @@ TyvisPortList::_publish_cc_port_init( published_file &_cc_out, PublishData *decl
       break;
     }
     i = dynamic_cast<TyvisInterfaceDeclaration *>(successor(i));
-    if(i != NULL) {
-      _cc_out << "," << NL();
-    }
   } 
 }
 

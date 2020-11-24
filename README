@@ -1,56 +1,16 @@
-Tyvis consists of a collection of C++ classes that implements the simulation semantics of
-VHDL.  Tyvis also contains a plugin for the "scram" front-end to allow code generation of
-tyvis-compatible simulations.
-
-The steps to be followed to simulate a VHDL design with savant/tyvis/warped are:
+The steps to be followed to simulate a Verilog/VHDL design with savant/tyvis/Warped2 are:
 
 1) SAVANT Parser/Code generator is necessary to generate TyVIS compliant
-   C++. It can be downloaded from https://github.com/wilseypa/savant
+   C++. It can be downloaded from https://github.com/CastMi/savant
 
-2) Download WARPED, from https://wilseypa/warped
+2) Download Warped2, from https://github.com/CastMi/warped2
 
 3) Refer to the installation notes/requirements to install SAVANT from the github repository. 
 
 4) Having installed Savant, invoke scram to publish the TyVIS compliant C++ code.
     Command to code-generate is
-	    %scram -publish-cc design_file.vhd
+	    scram --publish-cc design_file.vhd
 
 5) The Equivalent C++ will be generated in work.savant_lib/ directory.
 
-6) Set the environment variables TYVISROOT and WARPEDROOT to appropriate directories.
-
-   i.e., if you have downloaded TyVIS in directory /usr/tools then TYVISROOT is set to
-   /usr/tools/tyvis
-
-Tyvis doesn't need any installation other than downloading them and setting the
-appropriate environment variables.
-
-See the README and INSTALL section of Warped for setting up the environment variables.
-
-7) Run "make" command in work.savant_lib/ directory
-
-8) An executable starting with "SEA" will be created in the working directory.
-
 ------------------------------------------------------------------------
-
-
-TyVIS Specific Environment Variables
-------------------------------------
-
-TYVISROOT: set to the root location of the TYVIS install
-
-TYVIS_BUILDINDIVIDUALCCFILES: modifies the build process of the generated simulation model
-  (c++ code).  When this variable is set to true, it will cause the c++ files for the
-  simulation model to be compiled separately; when set to false (or not set at all), the
-  simulation model will be compiled with one compiler invocation to a file that includes
-  all the separate .cc files.
-
-  Explaination: Tests with the g++ compiler show a substantial improvement in compile
-  times when multiple .cc files are combined and compiled with a single compiler
-  invocation.  However, we still want to support the possible use of DISTCC and other
-  conventional methods to compile the generated files.  Thus, makefile output from tyvis
-  now supports both the conventional method and the creation of a single file containing
-  includes to all the .cc source files.  Control of which option is used is determined by
-  the environment variable $(TYVIS_BUILDINDIVIDUALCCFILES).  If it is defined, all of the
-  individual .cc files are separately compiled; if it is not defined, then the individual
-  .cc files are compiled as one.

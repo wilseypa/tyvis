@@ -490,7 +490,7 @@ TyvisTypeDefinition::_publish_cc_include( published_file &_cc_out ){
     ASSERT( get_base_type() != this );
     _get_base_type()->_publish_cc_include( _cc_out );
   }
-  _publish_cc_include( _cc_out, string("tyvis/") + _get_cc_tyvis_type() + ".hh" );
+  //_publish_cc_include( _cc_out, string("tyvis/") + _get_cc_tyvis_type() + ".hh" );
 }
 
 void 

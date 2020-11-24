@@ -93,7 +93,6 @@ Signal::isResolved() const {
   return (source->getResolutionFnId() != SourceBase::DEFAULT_RF_ID);
 }
 
-
 RValue &
 Signal::operator=( const RValue &that ){
   updateDrvVal( that );

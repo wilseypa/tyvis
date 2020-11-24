@@ -31,7 +31,7 @@
 
 #include "savant/savant.hh"
 #include "published_file.hh"
-#include <clutils/StringUtilities.h>
+#include <StringUtilities.h>
 
 void 
 TyvisSequentialStatementList::_publish_cc( published_file &_cc_out, PublishData *declarations  ) {

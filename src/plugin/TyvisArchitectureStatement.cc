@@ -34,8 +34,8 @@
 #include "TyvisPackageDeclaration.hh"
 #include "TyvisSignalDeclaration.hh"
 #include "TyvisSimpleSimultaneousStatement.hh"
-
 #include "savant/error_func.hh"
+#include "savant/IIR_AssociationList.hh"
 #include "savant/resolution_func.hh"
 #include "savant/StandardPackage.hh"
 #include "published_file.hh"
@@ -248,7 +248,6 @@ void
 TyvisArchitectureStatement::_publish_cc( published_file &_cc_out, PublishData * ) {
 
   CC_REF( _cc_out, "TyvisArchitectureStatement::_publish_cc" );
-  
   switch(get_kind()) {
   case IIR_COMPONENT_INSTANTIATION_STATEMENT:
     break;

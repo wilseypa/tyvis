@@ -22,7 +22,7 @@
 class RValue;
 
 #include "tyvis/tyvis-config.h"
-#include <clutils/VarArgs.h>
+#include <VarArgs.h>
 #include <tyvis/ElementAssociation.hh>
 
 enum VAType { RVALUE, LVALUE };

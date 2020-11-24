@@ -463,23 +463,11 @@ TyvisObjectDeclaration::_publish_cc_signal_net_info( published_file &_cc_out,
                                                      PublishData *declarations){
   CC_REF( _cc_out, "TyvisObjectDeclaration::_publish_cc_signal_net_info" );
   _get_subtype()->_publish_cc_include( _cc_out );
-  if( mode == DECLARATION ){
-    Tyvis::_publish_cc_include( _cc_out, "tyvis/SignalNetinfo.hh" );
-    if( dynamic_cast<published_header_file *>(&_cc_out) != NULL ) { 
-      _cc_out << "SignalNetinfo ";
-    }
-  }
-  _cc_out << *_get_mangled_declarator();
+  _cc_out << "addSignal(\"" << *_get_declarator() << "\", 0);" << NL();
   if( mode == DECLARATION ){
     if( dynamic_cast<published_header_file *>(&_cc_out) != NULL ) { 
       _cc_out << ";" << NL();
     }
-  }
-  else{
-    _cc_out << OS("(");
-    _get_subtype()->_publish_cc_type_info_xxx( _cc_out, declarations );
-    _cc_out << "," << NL()
-	    << "\"" << *_get_declarator() << "\"" << CS(")");
   }
 
   if( _get_implicit_declarations() != 0 ){

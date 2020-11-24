@@ -21,119 +21,38 @@
 // the file "LGPL", distributed with this archive.
 
 #include "tyvis/tyvis-config.h"
-#include <warped/warped.h>
-#include <warped/VTime.h>
+#include <warped.hpp>
+#include <VTime.hpp>
 #include <iostream>
 #include <sstream>
 
-typedef warped64_t VHDLVTimeMajor_t;
-typedef warped32_t VHDLVTimeMinor_t;
+using std::string;
 
 /** The class VHDLVTime. */
-
 class VHDLVTime : public VTime {
 public:
   /**@name Public Class Methods of VHDLVTime. */
   //@{
 
-  /** Constructor.
-      
-      @param major Major VTime.
-      @param minor Minor VTime.
-  */
-  VHDLVTime( VHDLVTimeMajor_t major, VHDLVTimeMinor_t minor ) : myMajor( major ), myMinor( minor ){}
-
-  /** Constructor.
-      
-      Minor VTime is set to 0 by default.
-      
-      @param major Major VTime.
-  */
-  VHDLVTime( VHDLVTimeMajor_t major ) : myMajor( major ), myMinor( 0 ){}
-
-  /** Copy Constructor.
-	
-      @param init VTime object that is copied.
-  */
-  VHDLVTime( const VHDLVTime &init ) : 
-    VTime(),
-    myMajor( init.getMajor() ), myMinor( init.getMinor() ){}
+  /** Constructor. **/
+  VHDLVTime( unsigned int major, unsigned int minor, unsigned int reg ) : VTime(major, minor, reg) {}
 
   /** Get Major VTime.
 	
       @return Major VTime.
   */
-  VHDLVTimeMajor_t getMajor() const { return myMajor; }
+  unsigned int getMajor() const { return myMajor; }
 
   /** Get Minor VTime.
 	
       @return Minor VTime.
   */
-  VHDLVTimeMinor_t getMinor() const { return myMinor; }
-
-  VTime *clone() const {
-    return new VHDLVTime( myMajor, myMinor );
-  }
+  unsigned int getMinor() const { return myMinor; }
 
   const VHDLVTime &operator=( const VHDLVTime &vhdlTime ){
     myMajor = vhdlTime.getMajor();
     myMinor = vhdlTime.getMinor();
     return *this;
-  }
-
-  /// Overloaded operator
-  const VTime &operator=( const VTime &from  ){
-    const VHDLVTime &vhdlTime = dynamic_cast<const VHDLVTime &>( from );
-    return operator=( vhdlTime );
-  }
-
-  /// Overloaded operator
-  const VHDLVTime operator+( const VHDLVTime &right ) const {
-    return VHDLVTime( myMajor + right.getMajor(), myMinor + right.getMinor() );
-  }
-
-  /// Overloaded operator
-  const VHDLVTime operator-( const VHDLVTime &right ) const {
-    return VHDLVTime( myMajor - right.getMajor(), myMinor - right.getMinor() );
-  }
-
-  /// Overloaded operator
-  bool operator<( const VTime &right ) const {
-    const VHDLVTime &vhdlTime = dynamic_cast<const VHDLVTime &>( right );
-    if( myMajor < vhdlTime.getMajor() ){
-      return true;
-    } 
-    else if( myMajor == vhdlTime.getMajor() && myMinor < vhdlTime.getMinor() ){
-      return true;
-    }
-    else{
-      return false;
-    }
-  }
-
-  /// Overloaded operator
-  bool operator>( const VTime &right ) const {
-    const VHDLVTime &vhdlTime = dynamic_cast<const VHDLVTime &>( right );
-    if( myMajor > vhdlTime.getMajor() ){
-      return true;
-    } 
-    else if ( myMajor == vhdlTime.getMajor() && myMinor > vhdlTime.getMinor() ){
-      return true;
-    }
-    else{
-      return false;
-    }
-  }
-
-  /// Overloaded operator
-  bool operator==( const VTime &right ) const {
-    const VHDLVTime &vhdlTime = dynamic_cast<const VHDLVTime &>( right );
-    if( myMajor == vhdlTime.getMajor() && myMinor == vhdlTime.getMinor() ){
-      return true;
-    }
-    else{
-      return false;
-    }
   }
 
   /// Overloaded operator
@@ -191,19 +110,6 @@ public:
     return getVHDLVTimeDataType();
   }
 
-  /**
-     Unhide Serializable#serialize
-  */
-  const SerializedInstance *serialize() const {
-    return Serializable::serialize();
-  }
-
-  void serialize( SerializedInstance * ) const;
-
-  static Serializable *deserialize( SerializedInstance * );
-
-  static void registerDeserializer();
-
   const string toString() const {
     std::ostringstream os;
     os << "(" << getMajor() << ", " << getMinor() << ")";
@@ -211,7 +117,7 @@ public:
   }
 
   // This needs to be implemented.
-  const warped64_t getApproximateIntTime() const {
+  const unsigned int getApproximateIntTime() const {
     return myMajor;
   }
   
@@ -222,7 +128,7 @@ private:
   //@{
   
   /// Default Constructor.
-  VHDLVTime() : myMajor(0), myMinor(0){}
+  VHDLVTime() : VTime(0,0,0) {}
   // Prevent VHDLVTimes from being allocated or deleted on stack.
 
   //@} // End of Private Class Methods of VHDLVTime.
@@ -231,10 +137,10 @@ private:
   //@{
 
   /// Major VHDLVTime.
-  VHDLVTimeMajor_t myMajor;
+  unsigned int myMajor;
 
   /// Minor VTime.
-  VHDLVTimeMinor_t myMinor;
+  unsigned int myMinor;
 
   //@} // End of Private Class Attributes of VTime.
 };

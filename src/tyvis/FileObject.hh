@@ -25,6 +25,7 @@
 #include "tyvis/EnumerationLiteral.hh"
 
 #include <fstream>
+
 using std::fstream;
 using std::ios;
 
@@ -101,10 +102,10 @@ protected:
   virtual void debugPrintDetails( ostream &os, int indent ) const;
 
 private:  
-  static fstream &openFile( const string &fileName, 
+  static void openFile( std::fstream* stream, const string &fileName, 
 			    const RValue &openMode );
   
-  static fstream &openFile( const Slice &fileName, 
+  static void openFile( std::fstream* stream, const Slice &fileName, 
 			    const RValue &openMode );
 
   /** Turns a VHDL open_kind into an ios::openmode. */

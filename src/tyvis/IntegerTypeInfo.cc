@@ -19,7 +19,7 @@
 
 #include "IntegerTypeInfo.hh"
 #include "UniversalInteger.hh"
-#include <clutils/StringUtilities.h>
+#include <StringUtilities.h>
 #include <climits>
 
 //The constructor for IntegerTypeInfo

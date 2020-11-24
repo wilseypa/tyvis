@@ -13,7 +13,7 @@
 #include "tyvis/RecordTypeInfo.hh"
 #include "tyvis/std_standardPkg.hh"
 #include "RecordTypeInfoTest.hh"
-#include <clutils/StringUtilities.h>
+#include <StringUtilities.h>
 #include <sstream>
 using std::ostringstream;
 

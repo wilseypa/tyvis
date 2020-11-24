@@ -58,6 +58,7 @@
 #include "PublishData.hh"
 
 extern language_processing_control *lang_proc;
+extern bool verbose_output;
 
 TyvisEntityDeclaration::TyvisEntityDeclaration() {  
   set_generic_clause(new TyvisGenericList());
@@ -104,15 +105,15 @@ TyvisEntityDeclaration::_publish_cc_headerfile(PublishData *declarations){
 				     this );
   CC_REF( header_file, "TyvisEntityDeclaration::_publish_cc_headerfile" );
   
-  Tyvis::_publish_cc_include( header_file, "tyvis/_savant_entity_elab.hh" );
+  //Tyvis::_publish_cc_include( header_file, "tyvis/_savant_entity_elab.hh" );
   
   // For AMS constructs
-  if (lang_proc->processing_vhdl_ams()) {
-    Tyvis::_publish_cc_include( header_file, "tyvis/_savant_entity_ams_elab.hh");
-  }
+  //if (lang_proc->processing_vhdl_ams()) {
+  //  Tyvis::_publish_cc_include( header_file, "tyvis/_savant_entity_ams_elab.hh");
+  //}
   
-  Tyvis::_publish_cc_include( header_file, "tyvis/SignalNetinfo.hh" );
-  Tyvis::_publish_cc_include( header_file, "tyvis/STDTypes.hh" );
+  //Tyvis::_publish_cc_include( header_file, "tyvis/SignalNetinfo.hh" );
+  //Tyvis::_publish_cc_include( header_file, "tyvis/STDTypes.hh" );
 
   // All the declarations are included through this file 
   _publish_cc_include_decls( header_file );
@@ -125,19 +126,17 @@ void
 TyvisEntityDeclaration::_publish_cc_class( published_file &_cc_out, PublishData *declarations ) {
 
   CC_REF( _cc_out, "TyvisEntityDeclaration::_publish_cc_class" );
-  
-  _cc_out <<"class " << _get_cc_elaboration_class_name();
-  if(lang_proc->processing_vhdl_ams()) {
-    _cc_out << " : public _savant_entity_ams_elab";
-  }
-  else {
-    _cc_out << " : public _savant_entity_elab";
-  }
-  _cc_out << OS("{")
-	  << "\npublic:\n";
+
+  _cc_out.add_include("tyvis/VHDLKernel.hh", true);
+  _cc_out << "class " << _get_cc_elaboration_class_name()
+          << " : public VHDLKernel";
+  _cc_out << OS(" {")
+	  << "\npublic:" << NL();
   _cc_out << _get_cc_elaboration_class_name() << OS("(");
-  _get_port_clause()->_publish_cc_unconstrained_ports( _cc_out, declarations, TRUE, FALSE, FALSE );
-  _cc_out << CS(");");
+  if(_get_port_clause()->_publish_cc_unconstrained_ports( _cc_out, declarations, TRUE, FALSE, FALSE ))
+     _cc_out << "," << NL();
+  _cc_out << "const std::string& name" << NL()
+          << CS(");");
   
   if( _get_generic_clause()->size() > 0 ){
     _cc_out << _get_cc_elaboration_class_name() << OS("(");
@@ -147,19 +146,8 @@ TyvisEntityDeclaration::_publish_cc_class( published_file &_cc_out, PublishData 
     _cc_out << CS(");");
   }
 
-  _cc_out << "~" << _get_cc_elaboration_class_name() << "();" << NL();
-
-  _get_generic_clause()->_publish_cc_elaborate( _cc_out, declarations );
-  _get_port_clause()->_publish_cc_elaborate( _cc_out, declarations );
-  //Aliases for signal objects are also published
-  _publish_cc_signals( _cc_out, _get_entity_declarative_part(), declarations );
-  _publish_cc_object_pointers( _cc_out, _get_entity_statement_part(), declarations );
-  
-  if (get_generic_clause()->first() != NULL) {
-    _cc_out << "void copyGenericsToGlobals();" << NL();
-  }
-  _get_entity_declarative_part()->_publish_cc_constants( _cc_out, declarations );
-  _cc_out << CS("};");
+  _cc_out << "~" << _get_cc_elaboration_class_name() << "();" << NL()
+     << CS("};");
 }
 
 void
@@ -329,10 +317,10 @@ TyvisEntityDeclaration::_publish_cc_ccfile(PublishData *declarations){
 			     this );
   CC_REF( cc_file, "TyvisEntityDeclaration::_publish_cc_ccfile" );
 
-  cc_file << "#include \"" << file_name.str() << ".hh\"\n";
+  cc_file << "#include \"" << file_name.str() << ".hpp\"\n";
 
-  cc_file << "class VHDLKernel;\n";
-  cc_file << "extern VHDLKernel *proc_array[];\n";
+  //cc_file << "class VHDLKernel;\n";
+  //cc_file << "extern VHDLKernel *proc_array[];\n";
 
   CC_REF( cc_file, "TyvisEntityDeclaration::_publish_cc_ccfile" );
 
@@ -358,7 +346,7 @@ TyvisEntityDeclaration::_publish_cc_headerfiles_for_cc( published_file &_cc_out 
 
   CC_REF( _cc_out, "TyvisEntityDeclaration::_publish_cc_headerfiles_for_cc" );
   
-  Tyvis::_publish_cc_include( _cc_out, "tyvis/ObjectBase.hh" );
+  //Tyvis::_publish_cc_include( _cc_out, "tyvis/ObjectBase.hh" );
 
   while (arch_stmt != NULL) {
     //###currently the process name doesn't include its entity and
@@ -391,31 +379,16 @@ TyvisEntityDeclaration::_publish_cc_constructor_with_no_arguments( published_fil
   CC_REF( _cc_out, "TyvisEntityDeclaration::_publish_cc_constructor_with_no_arguments" );
 
   _cc_out << _get_cc_elaboration_class_name() << "::" << _get_cc_elaboration_class_name() << "(";
-  _get_port_clause()->_publish_cc_unconstrained_ports( _cc_out, declarations, TRUE, TRUE, FALSE );
-  _cc_out << ")";
+  if(_get_port_clause()->_publish_cc_unconstrained_ports( _cc_out, declarations, TRUE, TRUE, FALSE ))
+     _cc_out << ",";
+  _cc_out << "const std::string& name"
+          << ")";
 
-  bool firstDeclFlag = false;  
-  if( numGenericClause > 0 ) {
-    _cc_out << ":\n    ";
-    _get_generic_clause()->_publish_generic_init( _cc_out, declarations );
-    if( numPortClause > 0 ){
-      _cc_out << ",\n   ";
-      _get_port_clause()->_publish_cc_port_init( _cc_out, declarations );
-    }    
-  }
-  else {
-    if(numPortClause > 0) {
-      _cc_out << ":\n    ";
-      _get_port_clause()->_publish_cc_port_init( _cc_out, declarations );
-    }
-    else {
-      firstDeclFlag = true;
-    }
-  }
-  
-  first = _get_entity_declarative_part()->_publish_cc_constants_init( _cc_out, declarations, first);
-  _publish_cc_signal_objects_init( _cc_out, declarations, first );  
-  _cc_out << OS("{");
+  _cc_out << " :\n"
+          << "VHDLKernel(name)"
+          << OS("{");
+  _get_generic_clause()->_publish_generic_init( _cc_out, declarations );
+  _get_port_clause()->_publish_cc_port_init( _cc_out, declarations );
   // before newing the elab guys down the heirarchy copy generics of this
   // entity to the global generic pointers in the entity_decls file
   if (numGenericClause > 0) {
@@ -481,26 +454,26 @@ TyvisEntityDeclaration::_publish_cc_component_decl( published_file &_cc_out, Pub
   }
 }
 
-void
+int
 TyvisEntityDeclaration::_publish_cc_signal_objects_init( published_file &_cc_out,
                                                                 PublishData *declarations,
                                                                 const IIR_Boolean firstFlag ){
   TyvisDeclaration* decl = dynamic_cast<TyvisDeclaration *>(get_entity_declarative_part()->first());
-
+  int retvalue = 0;
   int numGenericClause = get_generic_clause()->size();
   int numPortClause    = get_port_clause()->size();
   IIR_Boolean first    = firstFlag;
   
   CC_REF( _cc_out, "TyvisEntityDeclaration::_publish_cc_signal_objects_init" );
+  _cc_out << ":\n";
   
-  while (decl != NULL) {
+  for (;decl != NULL; retvalue++) {
     if (decl->get_kind() == IIR_SIGNAL_DECLARATION) {
-      if (first == TRUE) {
-	_cc_out << ":\n";
-	first = FALSE;
+      if (first = TRUE) {
+         first = FALSE;
       }
       else {
-	_cc_out << ",\n";
+         _cc_out << ",\n";
       }
       decl->_publish_cc_elaborate( _cc_out, declarations );
       _cc_out << "(";
@@ -549,6 +522,7 @@ TyvisEntityDeclaration::_publish_cc_signal_objects_init( published_file &_cc_out
     }
     decl = dynamic_cast<TyvisDeclaration *>(get_entity_declarative_part()->successor(decl));
   }
+  return retvalue;
 }
 
 void 
@@ -574,6 +548,8 @@ TyvisEntityDeclaration::_get_entity() {
 
 void 
 TyvisEntityDeclaration::_publish_cc(){
+   if(verbose_output)
+      cout << "We are publishing: " << dynamic_cast<IIRBase_TextLiteral*>(_get_declarator())->convert_to_string() << endl;
   Tyvis *old_node = _get_current_publish_node();
 
   _set_current_publish_name( "" );
@@ -587,7 +563,7 @@ TyvisEntityDeclaration::_publish_cc(){
   _set_current_publish_node( this );
   _set_currently_publishing_unit(ENTITY_DECL);
 
-  Tyvis::_publish_cc_include( header_file, "tyvis/STDTypes.hh" );
+  //Tyvis::_publish_cc_include( header_file, "tyvis/STDTypes.hh" );
 
   _get_context_items()->_publish_cc( header_file, _declarations );
   _get_generic_clause()->_publish_cc_elaborate_as_pointers( header_file, _declarations, FALSE );

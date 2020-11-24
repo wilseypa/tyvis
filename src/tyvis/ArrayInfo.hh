@@ -21,9 +21,9 @@
 // the file "LGPL", distributed with this archive.
 
 #include "tyvis/tyvis-config.h"
-#include <warped/Serializable.h>
-#include <warped/SerializedInstance.h>
-#include <warped/DeserializerManager.h>
+#include <Serializable.h>
+#include <SerializedInstance.h>
+#include <DeserializerManager.h>
 #include <iostream>
 using std::ostream;
 using std::cerr;

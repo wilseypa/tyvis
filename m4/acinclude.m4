@@ -21,20 +21,17 @@ AC_CACHE_CHECK([for location of libclutils], [cl_cv_lib_clutils],
 if test $cl_cv_lib_clutils = no ; then
 AC_MSG_ERROR(The clutils package is required.)
 fi
-
-if test $cl_cv_lib_clutils != /usr ; then
 LDFLAGS="$LDFLAGS -L$cl_cv_lib_clutils/lib"
-CPPFLAGS="$CPPFLAGS -I$cl_cv_lib_clutils/include"
-fi
-AC_CHECK_HEADER(clutils/Debug.h, ,
-  AC_MSG_ERROR(Couldn't find clutils/Debug.h which is required and 
+CPPFLAGS="$CPPFLAGS -I$cl_cv_lib_clutils/include/clutils-0.0"
+AC_CHECK_HEADER( [Debug.h], ,
+  AC_MSG_ERROR( [Couldn't find clutils-0.0/Debug.h which is required and 
     part of the clutils distribution.  You probably need to install it
-    and/or specify the location of it with the --with-clutils option.))
+    and/or specify the location of it with the --with-clutils option.] ) )
 AC_SEARCH_LIBS(dlopen, [dl])
-AC_CHECK_LIB(clutils, isClutils, ,
-  AC_MSG_ERROR(Could not find a workable libclutils.so or libclutils.a.
+AC_CHECK_LIB([clutils], [fake], ,
+  AC_MSG_ERROR([Could not find a workable libclutils.so or libclutils.a.
     You probably need to install clutils and/or specify the location of
-    it with the --with-clutils option.), -lltdl)
+    it with the --with-clutils option.]), [-lltdl] )
 ]) dnl end CL_LIB_CLUTILS
 
 
@@ -66,13 +63,13 @@ if test $cl_cv_lib_warped != /usr ; then
 LDFLAGS="$LDFLAGS -L$cl_cv_lib_warped/lib"
 CPPFLAGS="$CPPFLAGS -I$cl_cv_lib_warped/include"
 fi
-AC_CHECK_HEADER(warped/SimulationObject.h, ,
-  AC_MSG_ERROR(Couldn't find warped/SimulationObject.h which is required and 
-    part of the warped distribution.  You probably need to install it
+AC_CHECK_HEADER(LogicalProcess.hpp, ,
+  AC_MSG_ERROR(Couldn't find warped/LogicalProcess.hpp which is required and 
+    part of the warped2 distribution.  You probably need to install it
     and/or specify the location of it with the --with-warped option.))
-AC_CHECK_LIB(warped, isWarped, ,
+AC_CHECK_LIB([warped], [warped_is_present], ,
   AC_MSG_ERROR(Could not find a workable libwarped.so or libwarped.a.
-    You probably need to install warped and/or specify the location of
+    You probably need to install warped2 and/or specify the location of
     it with the --with-warped option.), -lltdl )
 ]) dnl end CL_LIB_WARPED
 

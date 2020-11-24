@@ -18,7 +18,7 @@
 
 #include "TyvisPluginLoader.hh"
 #include "VHDLApplication.hh"
-#include <clutils/PluginManager.h>
+#include <PluginManager.h>
 
 TyvisPluginLoader &
 TyvisPluginLoader::instance(){

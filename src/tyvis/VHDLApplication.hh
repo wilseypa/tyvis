@@ -22,7 +22,7 @@
 // the file "LGPL", distributed with this archive.
 
 #include "tyvis/tyvis-config.h"
-#include <warped/Application.h>
+#include <Application.h>
 #include <vector>
 #include <string>
 #include "tyvis/VHDLVTime.hh"
@@ -41,6 +41,8 @@ public:
   /** Constructor. */
   VHDLApplication( _savant_entity_elab *initDesign );
 
+  virtual std::vector<SimulationObject*>* getSimulationObjects() {/* Inherit but not implemented */ return NULL;};
+  
   /** This method is invoked by the kernel so that the vHDLApplication can
       make any initializations or processing that is required by it.  In
       general it is strongly suggested that the vHDLApplication must

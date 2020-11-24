@@ -36,7 +36,10 @@ public:
   TyvisConcurrentConditionalSignalAssignment();
   ~TyvisConcurrentConditionalSignalAssignment();
 
+  IIR_Boolean _is_simultaneous_statement();
   TyvisSignalDeclaration *_get_guard_signal();
+  void _publish_cc( published_file &_cc_out, PublishData * );
+  void _publish_cc_main(published_file& ) override;
 
   void _build_sensitivity_list(TyvisDesignatorList* sensitivity_list);
   Tyvis *_transmute();

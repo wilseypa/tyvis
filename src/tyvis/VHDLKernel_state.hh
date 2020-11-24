@@ -26,8 +26,8 @@
 #include "tyvis/Block.hh"
 #include "tyvis/Variable.hh"
 #include "tyvis/VHDLVTime.hh"
-#include <warped/SimulationObject.h>
-#include <warped/State.h>
+#include <SimulationObject.h>
+#include <State.h>
 
 using std::ifstream;
 

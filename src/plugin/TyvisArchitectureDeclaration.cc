@@ -1,4 +1,3 @@
-
 // Copyright (c) 1996-2003 The University of Cincinnati.
 // All rights reserved.
 
@@ -54,15 +53,16 @@
 #include "TyvisTypeDefinition.hh"
 #include "TyvisUseClause.hh"
 #include "TyvisWaitStatement.hh"
-
 #include "PublishData.hh"
-#include "savant/error_func.hh"
-#include "savant/resolution_func.hh"
 #include "published_header_file.hh"
 #include "published_cc_file.hh"
-#include <sstream>
+// From savant
+#include "savant/error_func.hh"
+#include "savant/resolution_func.hh"
 #include "savant/language_processing_control.hh"
-#include <cstdlib> // for rand()
+#include "savant/IIR_AssociationList.hh"
+#include <sstream>
+#include <cstdlib>
 
 extern language_processing_control *lang_proc;
 
@@ -78,6 +78,21 @@ TyvisArchitectureDeclaration::~TyvisArchitectureDeclaration()
   delete _arch_declarations;
   delete get_architecture_declarative_part();
   delete get_architecture_statement_part();
+}
+
+void TyvisArchitectureDeclaration::_publish_cc_main(published_file & main_writer ) {
+  static unsigned int num = 0;
+  string myname = _get_cc_elaboration_class_name() + std::to_string(num);
+  _add_current_publish_name( myname );
+  CC_REF( main_writer, "TyvisArchitectureDeclaration::_publish_cc_declarations" );
+  main_writer << _get_cc_elaboration_class_name()
+     << "* " << myname << " = "
+     << "new " << _get_cc_elaboration_class_name()
+     << "( \"" << myname << "\" );" << NL()
+     << "object_pointers.push_back( " << myname << " );" << NL();
+  _get_architecture_statement_part()->_publish_cc_main(main_writer);
+   std::string *current_name = _get_full_current_publish_name();
+  _remove_current_publish_name( );
 }
 
 void 
@@ -96,10 +111,10 @@ TyvisArchitectureDeclaration::_publish_cc(){
   _set_current_publish_name( "" );
 
   // Check and group component instantiation statements for large designs
-  _group_component_instantiations(_get_architecture_statement_part(), 300);
+  //_group_component_instantiations(_get_architecture_statement_part(), 300);
   
   _publish_cc_declarations( _declarations );
-  _publish_cc_makefile_stub();
+  //_publish_cc_makefile_stub();
 
   _set_current_publish_name( old_current_publish_name );
   _set_current_publish_node( temp );
@@ -126,7 +141,7 @@ TyvisArchitectureDeclaration::_publish_cc_declarations(PublishData *declarations
   CC_REF( header_file, "TyvisArchitectureDeclaration::_publish_cc_declarations" );
   _publish_cc_include_decls( header_file );
   _get_context_items()->_publish_cc( header_file, declarations );
-  Tyvis::_publish_cc_include( header_file, "tyvis/STDTypes.hh" );
+  //Tyvis::_publish_cc_include( header_file, "tyvis/STDTypes.hh" );
 
   CC_REF( header_file, "TyvisArchitectureDeclaration::_publish_cc_declarations" );
   _get_architecture_declarative_part()->_publish_cc( header_file, declarations );
@@ -140,7 +155,7 @@ TyvisArchitectureDeclaration::_publish_cc_declarations(PublishData *declarations
   _publish_cc_include_elab( cc_file );
   _publish_cc_include_decls( cc_file );
   CC_REF( cc_file, "TyvisArchitectureDeclaration::_publish_cc_declarations" );
-  Tyvis::_publish_cc_include( cc_file, "tyvis/VHDLProcess.hh" );
+  //Tyvis::_publish_cc_include( cc_file, "tyvis/VHDLProcess.hh" );
   CC_REF( cc_file, "TyvisArchitectureDeclaration::_publish_cc_declarations" );
   _get_architecture_declarative_part()->_publish_cc_decl( cc_file, declarations );
   CC_REF( cc_file, "TyvisArchitectureDeclaration::_publish_cc_declarations" );
@@ -174,9 +189,9 @@ void
 TyvisArchitectureDeclaration::_publish_cc_makefile_stub(){
   ASSERT( _get_entity() != 0 );
   // Dump the entity's Makefile stub
-  _get_entity()->_publish_cc_makefile_stub();
+  //_get_entity()->_publish_cc_makefile_stub();
   // Dump the architecture's Makefile stub
-  TyvisLibraryUnit::_publish_cc_makefile_stub();
+  //TyvisLibraryUnit::_publish_cc_makefile_stub();
 }  
 
 void
@@ -231,14 +246,14 @@ TyvisArchitectureDeclaration::_publish_cc_headerfile( PublishData *declarations 
 				     _get_cc_elaboration_class_name(),
 				     this );
   CC_REF( header_file, "TyvisArchitectureDeclaration::_publish_cc_headerfile" );
-  Tyvis::_publish_cc_include( header_file, "tyvis/STDTypes.hh" );
+  //Tyvis::_publish_cc_include( header_file, "tyvis/STDTypes.hh" );
   
   if( lang_proc->processing_vhdl_ams() ){
     _publish_cc_ams_includes( header_file );
   }
 
   // Request the Hierarchy.hh for our hierarchy stuff
-  Tyvis::_publish_cc_include( header_file, "tyvis/Hierarchy.hh" );
+  //Tyvis::_publish_cc_include( header_file, "tyvis/Hierarchy.hh" );
 
   // Request AMSType.hh if VHDL-AMS constructs are invoked.
   if( lang_proc->processing_vhdl_ams() ) {
@@ -247,7 +262,7 @@ TyvisArchitectureDeclaration::_publish_cc_headerfile( PublishData *declarations 
 
   // Just include the decls file which has all the required includes
   // _publish_cc_include_decls( header_file );
-  Tyvis::_publish_cc_include( header_file, _get_cc_design_unit_name() + ".hh" );
+  Tyvis::_publish_cc_include( header_file, _get_cc_design_unit_name() + ".hpp" );
   _publish_cc_class_includes( header_file, _get_architecture_statement_part() );
   _publish_cc_class( header_file, declarations );
 }
@@ -256,6 +271,7 @@ void
 TyvisArchitectureDeclaration::_publish_cc_class( published_file &_cc_out,
 						 PublishData *declarations ) {
   CC_REF( _cc_out, "TyvisArchitectureDeclaration::_publish_cc_class" );
+
   _get_entity()->_publish_cc_include_elab( _cc_out );
   _cc_out << "class " << _get_cc_elaboration_class_name() 
 	  << " : public "
@@ -265,10 +281,12 @@ TyvisArchitectureDeclaration::_publish_cc_class( published_file &_cc_out,
 
   // Publish the constructor
   _cc_out << _get_cc_elaboration_class_name() << "(";
-  _get_entity()->_get_port_clause()->_publish_cc_unconstrained_ports( _cc_out,
+  if(_get_entity()->_get_port_clause()->_publish_cc_unconstrained_ports( _cc_out,
 								      declarations,
-								      TRUE, FALSE, FALSE);
-  _cc_out << ");" << NL();  
+								      TRUE, FALSE, FALSE))
+     _cc_out << ",";
+  _cc_out << "const std::string& name"
+          << ");" << NL();
 
   if(_get_entity()->get_generic_clause()->size() > 0) {
     _cc_out << _get_cc_elaboration_class_name() << "(" << NL();
@@ -280,14 +298,10 @@ TyvisArchitectureDeclaration::_publish_cc_class( published_file &_cc_out,
   }
 
   // The destructor.
-  _cc_out << "~" << _get_cc_elaboration_class_name() << "();" << NL() << NL()
-	  << "void instantiate(Hierarchy *, const string parent_base, const char *local_name);" << NL()
-          << "std::string _base;" << NL()
-          << "std::string get_base() {return(_base);}" << NL()
-	  << "void createNetInfo();" << NL()
-	  << "void connect(int, int, ...);" << NL()
-	  << "void partition() {}" << NL()
-	  << "_savant_entity_elab *getArchitecture(){ return this; }" << NL();// { return this; }";
+  _cc_out << "~" << _get_cc_elaboration_class_name() << "();\n" << NL()
+	       << "virtual std::vector<std::shared_ptr<warped::Event>> receiveEvent( const warped::Event& ) override;" << NL()
+	       << "virtual std::vector<std::shared_ptr<warped::Event>> initializeLP() override;" << NL()
+	  << "virtual std::vector<std::shared_ptr<warped::Event>> assignSignal( const std::string& name, int value, unsigned int delay, const VTime& timestamp ) override;" << NL();
 
   if( lang_proc->processing_vhdl_ams() ){
     _publish_cc_ams_objects( _cc_out, declarations );
@@ -319,7 +333,8 @@ TyvisArchitectureDeclaration::_publish_cc_class( published_file &_cc_out,
   }
   else{
     // Publish the pointers to processes and objects used in this architecture
-    _publish_cc_object_pointers( _cc_out, _get_architecture_statement_part(), declarations );
+    // TODO: Here I find all the object of the subhierarchy that I need
+    //_publish_cc_object_pointers( _cc_out, _get_architecture_statement_part(), declarations );
   }
 
   // Publish file objects.
@@ -341,7 +356,7 @@ TyvisArchitectureDeclaration::_publish_cc_ccfile(PublishData *declarations, Publ
 			     _get_cc_elaboration_class_name(),
 			     this );
   CC_REF( cc_file, "TyvisArchitectureDeclaration::_publish_cc_ccfile" );
-  Tyvis::_publish_cc_include( cc_file, "tyvis/SourceBase.hh" );
+  //Tyvis::_publish_cc_include( cc_file, "tyvis/SourceBase.hh" );
   Tyvis::_publish_cc_include( cc_file, "cstdarg", true );
   _publish_cc_include_elab( cc_file );
 
@@ -454,25 +469,10 @@ TyvisArchitectureDeclaration::_publish_cc_constructor_with_no_arguments( publish
   CC_REF( _cc_out, "TyvisArchitectureDeclaration::_publish_cc_constructor_with_no_arguments" );
  
   _cc_out << _get_cc_elaboration_class_name() << "::"
-	  << _get_cc_elaboration_class_name() << OS("( ");
-  noOfUnconstrainedPorts = 
-    _get_entity()->_get_port_clause()->_publish_cc_unconstrained_ports( _cc_out, declarations, TRUE, TRUE, FALSE );
-  _cc_out << CS(")");
-  
-  if (noOfUnconstrainedPorts > 0) {
-    // Have to pass the parameters to the entity .ie. parent class...
-    _cc_out << ":" << NL();
-    _cc_out << OS(_get_entity()->_get_cc_elaboration_class_name() + "(");
-    _get_entity()->_get_port_clause()->_publish_cc_unconstrained_ports( _cc_out, declarations, FALSE, TRUE, FALSE );
-    _cc_out << CS(")");
-  }
-  
-  _publish_cc_ams_objects_init(_cc_out, firstDeclFlag, declarations, arch_declarations);
-
-  // Initialize all the type info structures first here...
-  firstDeclFlag = _get_architecture_declarative_part()->_publish_cc_constant_definitions( _cc_out, declarations, firstDeclFlag);
-  _publish_cc_signal_objects_init( _cc_out, declarations, firstDeclFlag );
-  _cc_out << OS("{");
+	  << _get_cc_elaboration_class_name() << OS("(")
+	  << "const std::string& name ) :" << NL()
+     << _get_entity()->_get_cc_elaboration_class_name() + "( name )"
+     << " {" << NL();
   _publish_cc_ams_form_global_quantity_list( _cc_out, declarations );
   _cc_out.insert_comment( "all of the global constants..." );
   _get_architecture_declarative_part()->_publish_cc_global_constants_assignments( _cc_out, declarations );
@@ -480,7 +480,7 @@ TyvisArchitectureDeclaration::_publish_cc_constructor_with_no_arguments( publish
   _get_architecture_declarative_part()->_publish_cc_file_objects_init( _cc_out, declarations );
   _cc_out.insert_comment( "all of the object pointers..." );
   _publish_cc_object_pointers_init( _cc_out, declarations );
-  _cc_out << CS("}");
+  _cc_out << CS("}\n");
 }
 
 void
@@ -544,54 +544,55 @@ TyvisArchitectureDeclaration::_publish_cc_object_pointers_init( published_file &
 }
 
 void
-TyvisArchitectureDeclaration::_publish_cc_instantiate( published_file &_cc_out, PublishData *declarations ) {
+TyvisArchitectureDeclaration::_publish_cc_instantiate( published_file &_cc_out, PublishData * ) {
   CC_REF( _cc_out, "TyvisArchitectureDeclaration::_publish_cc_instantiate" );
-  _cc_out << "void" << NL()
-	  << OS( _get_cc_elaboration_class_name() + "::instantiate( Hierarchy *hier, const string parent_base, const char *local_name ){");
-  _cc_out << "  _base = hier->addFrame(parent_base, \"";
-  _cc_out << get_declarator()->convert_to_string();
-  _cc_out << OS("\", local_name);");
-  // Publish instantiate stmts from entity statement part
-  _get_entity()->_get_entity_statement_part()->_publish_cc_instantiate_calls( _cc_out, declarations );
-  // Publish instantiate stmts from architecture statement part
-  _get_architecture_statement_part()->_publish_cc_instantiate_calls( _cc_out, declarations );
-
-  if( _is_foreign_architecture() ){
-    _publish_cc_foreign_instantiate( _cc_out );
-  }
-
-  // Now we'll need to call "createNetInfo" to connect the nets.
-  _cc_out << "createNetInfo();" << NL();
-  _cc_out << CS("}");
+  _cc_out << "std::vector<std::shared_ptr<warped::Event>>" << NL()
+	       << OS( _get_cc_elaboration_class_name() + "::initializeLP(){")
+          << "std::cout << name_ << \": initialization\" << std::endl;" << NL()
+          << "std::vector<std::shared_ptr<warped::Event>> response_events;" << NL()
+          << OS("for ( auto it = hierarchy_.begin(); it != hierarchy_.end(); it++) {")
+          << "std::cout << name_ << \": send a message to \" << name_ << \" to initialize the signal \" << (*it).first << std::endl;" << NL()
+          << "response_events.emplace_back(new SigEvent { name_, 0, (*it).first, VTime::getZero() });"
+          << CS("}\n")
+          << "return response_events;"
+          << CS("}\n");
 }
 
 void
 TyvisArchitectureDeclaration::_publish_cc_createNetInfo( published_file &_cc_out, PublishData *declarations ) {
   CC_REF( _cc_out, "TyvisArchitectureDeclaration::_publish_cc_createNetInfo" );
+  _cc_out.add_include("tyvis/SigEvent.hh", true);
+  _cc_out.add_include("cassert", true);
+  _cc_out.add_include("iostream", true);
+  // AssignSignal method
+  _cc_out << "std::vector<std::shared_ptr<warped::Event>>" << NL()
+	       << OS( _get_cc_elaboration_class_name() + "::assignSignal( const std::string& name, int value, unsigned int delay, const VTime& timestamp){")
+          << "std::vector<std::shared_ptr<warped::Event>> response_events;" << NL()
+          << "assert( signals_.find(name) != signals_.end() );" << NL()
+          << OS("if ( delay == 0 ) {")
+          << "signals_[name] = value;" << NL()
+          << OS("if ( hierarchy_.find(name) != hierarchy_.end() ) {")
+          << OS("for ( auto it = hierarchy_.find(name)->second.begin(); it != hierarchy_.find(name)->second.end(); it++) {")
+          << "std::cout << name_ << \": send a message to \" << (*it).first << \" because the signal \" << (*it).second << \" has changed\" << std::endl;" << NL()
+          << "response_events.emplace_back(new SigEvent { (*it).first, value, (*it).second, timestamp });"
+          << CS("}")
+          << CS("}")
+          << CS("}")
+          << OS("else {")
+          << "response_events.emplace_back(new SigEvent { name_, value, name, timestamp + delay });"
+          << CS("}")
+          << "return response_events;"
+          << CS("}\n");
 
-  const string tmp = _get_current_elab_name();
-  const string tmp2 = _get_current_publish_name();
-  Tyvis* tmpNode = _get_current_publish_node();
-
-  _cc_out << "void" << NL();
-  _cc_out << _get_cc_elaboration_class_name() << OS("::createNetInfo(){");
-
-  // Publish createNetInfo from entity statement part
-  _get_entity()->_publish_cc_createNetInfo( _cc_out, declarations );
-
-  _publish_cc_anonymous_drivers( _cc_out, _get_entity()->_get_port_clause(), declarations );
-  _publish_cc_anonymous_drivers( _cc_out, _get_architecture_declarative_part(), declarations );
-  
-  _get_architecture_statement_part()->_publish_cc_createNetInfo( _cc_out, declarations );
-
-  if( _is_foreign_architecture() ){
-    _publish_cc_foreign_createNetInfo( _cc_out, declarations );
-  }
-  _cc_out << CS("}");
-  _set_current_elab_name( tmp );
-  _set_current_publish_name( tmp2 );
-  _set_current_publish_node( tmpNode );
-
+  // AssignSignal method
+  _cc_out << "std::vector<std::shared_ptr<warped::Event>>" << NL()
+	       << OS( _get_cc_elaboration_class_name() + "::receiveEvent( const warped::Event& event ){")
+          << "const SigEvent sign_event = static_cast<const SigEvent&>(event);" << NL()
+          << "std::cout << name_ << \": received a message from \" << event.sender_name_" << NL()
+          << "<< \" at time \" << event.timestamp() << \" because the signal \" << sign_event.signalName() << \" has changed.\" << std::endl;" << NL()
+          << "std::vector<std::shared_ptr<warped::Event>> response_events = assignSignal(sign_event.signalName(), sign_event.getValue(), 0, sign_event.timestamp());" << NL()
+          << "return response_events;"
+          << CS("}");
 }
 
 void
@@ -599,96 +600,6 @@ TyvisArchitectureDeclaration::_publish_cc_connect( published_file &_cc_out,
 						   PublishData *declarations ) {
   CC_REF( _cc_out, "TyvisArchitectureDeclaration::_publish_cc_connect" );
 
-  _cc_out << "void" << NL()
-          << OS( _get_cc_elaboration_class_name() +
-                 "::connect( int inputSignals, int outputSignals, ... ){")
-	  << "int noOfSignals = inputSignals + outputSignals;" << NL()
-	  << "va_list ap;" << NL()
-	  << "va_start(ap, outputSignals);" << NL()
-	  << OS("for( int i=0; i < noOfSignals; i++ ){")
-	  << "addToFanOut( va_arg(ap, RValue*) );" << NL()
-	  << CS("}")
-	  << "va_end(ap);" << NL();
-
-  //Pass on the output connection  inforamtion to its output signals
-  TyvisSignalInterfaceDeclaration* portelement = NULL;
-  IIR_Mode mode;
-  int index = 0;
-
-  _cc_out << OS("if( inputSignals > 0 ){");
-  portelement = dynamic_cast<TyvisSignalInterfaceDeclaration *>(_get_entity()->get_port_clause()->first());
-  while( portelement != NULL ){
-    mode = portelement->get_mode();
-    if(mode == IIR_IN_MODE ) {
-      _cc_out << OS("setSourceInfo(");
-      portelement->_publish_cc_object_name( _cc_out, declarations ); 
-      _cc_out << "," << NL() 
-	      << "*(fanOutInfo[";
-      _cc_out << index << "])" << CS(");");
-      index++;
-    }
-    portelement = dynamic_cast<TyvisSignalInterfaceDeclaration *>(_get_entity()->get_port_clause()->successor(portelement));
-  }
-  _cc_out << CS("}");
-
-
-  CC_REF( _cc_out, "TyvisArchitectureDeclaration::_publish_cc_connect" );
-  _cc_out << OS("if( outputSignals > 0 ){");
-  portelement = dynamic_cast<TyvisSignalInterfaceDeclaration *>(_get_entity()->get_port_clause()->first());
-  while( portelement != NULL ){
-    if (portelement->get_kind() != IIR_TERMINAL_INTERFACE_DECLARATION) {
-      switch( portelement->get_mode() ){
-      case IIR_INOUT_MODE:{
-	CC_REF( _cc_out, "TyvisArchitectureDeclaration::_publish_cc_connect" );
-	_cc_out << *portelement->_get_mangled_declarator() << OS(".addToFanOut(") << NL()
-		<< "*(fanOutInfo[" << index << "])" << CS(");")
-
-		<< OS("setSourceInfo(")
-		<< *portelement->_get_mangled_declarator() << "," << NL() 
-		<< "*(fanOutInfo[" << index << "])" << CS(");");
-	index++;
-	break;
-      }
-      case IIR_OUT_MODE:{
-	CC_REF( _cc_out, "TyvisArchitectureDeclaration::_publish_cc_connect" );
-	_cc_out << *portelement->_get_mangled_declarator() << OS(".addToFanOut(") << NL()
-		<< "*(fanOutInfo[" << index << "])" << CS(");");
-	index++;
-	break;
-      }
-      case IIR_IN_MODE:{
-	break;
-      }
-      default:{
-	ostringstream err;
-	err << "TyvisArchitectureDeclaration::_publish_cc_connect, mode |" 
-	    << portelement->get_mode() << "| unsupported.";
-	report_error( portelement, err.str() );
-	abort();
-      }
-      }
-    }
-    portelement =
-      dynamic_cast<TyvisSignalInterfaceDeclaration *>(_get_entity()->get_port_clause()->successor(portelement));
-  }
-  _cc_out << CS("}");
-
-  TyvisArchitectureStatement* arch_stmt = NULL;
-  // Publish output  connections for entity statement part
-  arch_stmt = dynamic_cast<TyvisArchitectureStatement *>(_get_entity()->get_entity_statement_part()->first());
-  while (arch_stmt != NULL) {
-    arch_stmt->_publish_cc_connect_call( _cc_out, declarations );
-    arch_stmt = dynamic_cast<TyvisArchitectureStatement *>(_get_entity()->get_entity_statement_part()->successor(arch_stmt));
-  }
-
-  // Publish output connections for  architecture statement part
-  arch_stmt = dynamic_cast<TyvisArchitectureStatement *>(get_architecture_statement_part()->first());
-  while (arch_stmt != NULL) {
-    arch_stmt->_publish_cc_connect_call( _cc_out, declarations );
-
-    arch_stmt = dynamic_cast<TyvisArchitectureStatement *>(get_architecture_statement_part()->successor(arch_stmt));
-  }
-  _cc_out << CS("}");
 }
 
 void
@@ -1080,15 +991,6 @@ TyvisArchitectureDeclaration::_publish_cc_ams_form_global_quantity_list(publishe
 
 void
 TyvisArchitectureDeclaration::_publish_cc_allocate_module( published_file &_cc_out ){
-  _cc_out << "extern \"C\"";
-  _cc_out.start_block();
-  _cc_out << "void *allocate" << _get_cc_design_unit_name() << "()";
-  _cc_out.start_block();    
-  _cc_out <<"return new "
-	  << _get_cc_elaboration_class_name();
-  _cc_out.end_statement();
-  _cc_out.end_block();
-  _cc_out.end_block();
 }
 
 void

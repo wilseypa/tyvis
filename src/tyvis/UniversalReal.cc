@@ -19,7 +19,7 @@
 #include "UniversalReal.hh"
 #include "AccessObject.hh"
 #include "std_standardPkg.hh"
-#include <clutils/StringUtilities.h>
+#include <StringUtilities.h>
 #include <cmath>
 #include <sstream>
 #include <typeinfo>

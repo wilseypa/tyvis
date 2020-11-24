@@ -17,7 +17,7 @@
 // the file "LGPL", distributed with this archive.
 
 #include "tyvis/tyvis-config.h"
-#include <clutils/PluginBase.h>
+#include <PluginBase.h>
 
 class ForeignProcess;
 using std::string;

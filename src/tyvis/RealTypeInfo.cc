@@ -18,7 +18,7 @@
 // the file "LGPL", distributed with this archive.
 
 #include "RealTypeInfo.hh"
-#include <clutils/StringUtilities.h>
+#include <StringUtilities.h>
 
 //The constructor for RealTypeInfo
 RealTypeInfo::RealTypeInfo() :
@@ -94,7 +94,7 @@ RealTypeInfo::create( const SubElementFactory * ) const {
 Value
 RealTypeInfo::value( const string &initValue ) const {
   int num = 0;
-  return Value( UniversalReal( stringToDouble( initValue, num ) ) );
+  return Value( UniversalReal( stringToDouble( initValue ) ) );
 }
 
 void

@@ -1,4 +1,4 @@
-
+//
 // Copyright (c) 1996-2003 The University of Cincinnati.
 // All rights reserved.
 
@@ -127,10 +127,10 @@ TyvisPackageDeclaration::_publish_cc_include( published_file &_cc_out ){
   if( _get_declarative_region() != 0) {
     if ( dynamic_cast<TyvisDeclaration *>(_get_declarative_region()) &&
       (IIRBase_TextLiteral::cmp(dynamic_cast<IIR_Declaration *>(_get_declarative_region())->get_declarator(), "std")) == 0){
-      _publish_cc_include( _cc_out, string("tyvis/") + _get_cc_package_name() + ".hh" );
+      //_publish_cc_include( _cc_out, string("tyvis/") + _get_cc_package_name() + ".hh" );
     } 
     else{
-      _publish_cc_include( _cc_out, _get_cc_package_name() + ".hh" );
+      //_publish_cc_include( _cc_out, _get_cc_package_name() + ".hh" );
     }
   }
 }

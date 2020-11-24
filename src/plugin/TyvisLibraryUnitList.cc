@@ -27,6 +27,7 @@
 #include "TyvisLibraryUnitList.hh"
 #include "TyvisLibraryUnit.hh"
 #include "savant/library_manager.hh"
+#include <savant/IIR_TextLiteral.hh>
 
 void 
 TyvisLibraryUnitList::_publish_cc(){
@@ -34,6 +35,16 @@ TyvisLibraryUnitList::_publish_cc(){
 
   while (lib_unit != NULL) {
     lib_unit->_publish_cc( );
+    lib_unit = dynamic_cast<TyvisLibraryUnit *>(successor(lib_unit));
+  }
+}
+
+void
+TyvisLibraryUnitList::_publish_cc_main( published_file& file_writer ) {
+  TyvisLibraryUnit *lib_unit = dynamic_cast<TyvisLibraryUnit *>(first());
+
+  while (lib_unit != NULL) {
+    lib_unit->_publish_cc_main( file_writer );
     lib_unit = dynamic_cast<TyvisLibraryUnit *>(successor(lib_unit));
   }
 }

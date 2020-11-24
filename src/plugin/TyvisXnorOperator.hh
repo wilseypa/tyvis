@@ -30,11 +30,14 @@
 
 class TyvisXnorOperator : public virtual TyvisLogicalOperators, public virtual IIRBase_XnorOperator {
 public:
-  const string &_get_cc_operator_name() const;
+   const string &_get_cc_operator_name() const;
+   void _publish_cc_main( published_file& ) override;
+   void _publish_cc() override;
 
 protected:
 
 private:
 
 };
+
 #endif

@@ -22,14 +22,14 @@
 
 //---------------------------------------------------------------------------
 
-#include <clutils/FileManager.h>
+#include <FileManager.h>
 
 #include "published_file.hh"
 #include <savant/savant.hh>
 #include <savant/include_manager.hh>
 #include <savant/error_func.hh>
 #include <savant/IIR_Identifier.hh>
-#include <clutils/StringUtilities.h>
+#include <StringUtilities.h>
 
 published_file::published_file( const string &output_directory,
 				const string &init_file_name,
@@ -53,10 +53,10 @@ published_file::publish_standard_header( IIR *published_node ){
   insert_comment( "This file was published as the result of processing the IIR " );
   insert_comment( string("node ") + published_node->get_kind_text() );
   if( published_node->get_file_name() ){
-    insert_comment( "from the VHDL file " +published_node->get_file_name()->convert_to_string() );
-    insert_comment( ", line " + intToString(published_node->get_line_number()) + ".  " );
+    insert_comment( "from the VHDL file " + published_node->get_file_name()->convert_to_string() );
+    insert_comment( "line " + intToString(published_node->get_line_number()) + "." );
     insert_comment( "It's probably best not to be editing this file by hand since" );
-    insert_comment( "it was automatically generated.\n\n\n" );
+    insert_comment( "it was automatically generated.\n\n" );
   }
 }
 

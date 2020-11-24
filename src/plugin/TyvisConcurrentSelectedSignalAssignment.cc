@@ -54,7 +54,6 @@ TyvisConcurrentSelectedSignalAssignment::~TyvisConcurrentSelectedSignalAssignmen
 
 Tyvis * 
 TyvisConcurrentSelectedSignalAssignment::_transmute() {
-
   TyvisProcessStatement* pstmt = new TyvisProcessStatement;
   TyvisWaitStatement* wstmt = new TyvisWaitStatement;
   TyvisIfStatement* guardIfStmt = NULL;

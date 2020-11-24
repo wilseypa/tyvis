@@ -39,6 +39,8 @@ public:
   void _publish_cc_ams_function_call_in_simult_stmt(published_file &);
   virtual void _publish_cc_ams_operator_name( published_file & );
   
+  virtual void _publish_cc() {};
+  
   void _build_reference_quantity_list(dl_list<TyvisReferenceAttribute> *);
   void _set_stmt_signal_index(IIR_Int32 *,  savant::set<TyvisDeclaration> *);
 

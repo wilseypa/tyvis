@@ -128,7 +128,7 @@ void
 TyvisPackageBodyDeclaration::_publish_cc_headers( published_file &_cc_out ) {
   Tyvis *old_node = _get_current_publish_node();
   _set_current_publish_node( this );
-  Tyvis::_publish_cc_include( _cc_out, "tyvis/VHDLProcess.hh" );
+  Tyvis::_publish_cc_include( _cc_out, "tyvis/VHDLProcess.hpp" );
   Tyvis::_publish_cc_include( _cc_out, _get_cc_package_name() + ".hh" );
   TyvisDeclaration *decl = 
     dynamic_cast<TyvisDeclaration *>(get_package_declarative_part()->first());

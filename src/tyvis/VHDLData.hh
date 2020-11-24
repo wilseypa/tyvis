@@ -21,7 +21,7 @@
 // the file "LGPL", distributed with this archive.
 
 #include "tyvis/tyvis-config.h"
-#include <warped/Serializable.h>
+#include <Serializable.h>
 #include "tyvis/RValue.hh"
 #include <string>
 using std::string;

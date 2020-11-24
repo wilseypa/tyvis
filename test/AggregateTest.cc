@@ -14,8 +14,8 @@
 #include "tyvis/TyvisVarArgs.hh"
 #include "tyvis/Value.hh"
 #include "tyvis/std_standardPkg.hh"
-#include <warped/SerializedInstance.h>
-#include <clutils/StringUtilities.h>
+#include <SerializedInstance.h>
+#include <StringUtilities.h>
 #include <sstream>
 using std::ostringstream;
 
